@@ -136,6 +136,7 @@ static void registry_global_remove(
             destroy_output_proxy(current_output->proxy);
             free(current_output);
             printf("global removed: name=%" PRIu32 "\n", name);
+            return;
         }
 
         previous_output = current_output;
