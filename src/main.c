@@ -32,6 +32,21 @@ static void destroy_output_proxy(struct wl_output *output) {
     }
 }
 
+static void destroy_outputs(struct coldwrite_state *state) {
+    struct coldwrite_output *current_output = state->outputs;
+
+    while (current_output != NULL) {
+        struct coldwrite_output *next_output = current_output->next;
+
+        destroy_output_proxy(current_output->proxy);
+        free(current_output);
+
+        current_output = next_output;
+    }
+
+    state->outputs = NULL;
+}
+
 static void registry_global(
     void *data,
     struct wl_registry *registry,
@@ -188,12 +203,16 @@ int main(void) {
     if (state.initialization_failed) {
         fprintf(stderr, "Something went wrong with initialization, exiting...\n");
         // TODO: remember to clean-up here. Not important now when protoptyping and building MVP.
-        return 1;
+        wl_registry_destroy(registry);
+        destroy_outputs(&state);
+        wl_display_disconnect(display);
+        return EXIT_FAILURE;
     }
 
     if (state.session_lock_manager == NULL) {
         fprintf(stderr, "Session locking is not supported\n");
         wl_registry_destroy(registry);
+        destroy_outputs(&state);
         wl_display_disconnect(display);
         return EXIT_FAILURE;
     }
@@ -201,6 +220,7 @@ int main(void) {
     if (state.wl_compositor == NULL) {
         fprintf(stderr, "The wl_compositor was not found\n");
         wl_registry_destroy(registry);
+        destroy_outputs(&state);
         wl_display_disconnect(display);
         return EXIT_FAILURE;
     }
@@ -213,6 +233,7 @@ int main(void) {
 
     ext_session_lock_manager_v1_destroy(state.session_lock_manager);
     wl_compositor_destroy(state.wl_compositor);
+    destroy_outputs(&state);
     wl_registry_destroy(registry);
     wl_display_disconnect(display);
 
