@@ -1,0 +1,13 @@
+/*
+
+!/.gitignore
+
+!/flake.nix
+!/flake.lock
+
+!/meson.build
+!/meson.options
+!/meson_options.txt
+
+!/src/
+!/src/**
