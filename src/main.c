@@ -17,6 +17,7 @@ struct coldwrite_state {
     struct ext_session_lock_manager_v1 *session_lock_manager;
     struct wl_compositor *wl_compositor;
     struct coldwrite_output *outputs;
+    struct wl_shm *wl_shm;
     bool initialization_failed;
 };
 
@@ -124,6 +125,26 @@ static void registry_global(
         state->outputs = new_output;
     }
 
+    if (strcmp(interface, wl_shm_interface.name) == 0) {
+        uint32_t client_version = wl_shm_interface.version;
+
+        if (client_version > bind_version) {
+            client_version = bind_version;
+        }
+
+        state->wl_shm = wl_registry_bind(
+            registry,
+            name,
+            &wl_shm_interface,
+            client_version
+        );
+
+        if (state->wl_shm == NULL) {
+            state->initialization_failed = true;
+            return;
+        }
+    }
+
     printf("global: name=%" PRIu32 ", interface=%s, version=%" PRIu32 "\n", name, interface, version);
 }
 
@@ -207,9 +228,15 @@ int main(void) {
         return EXIT_FAILURE;
     }
 
+    if (state.wl_shm == NULL) {
+        fprintf(stderr, "Wayland shared memory (wl_shm) not available...\n");
+        wl_registry_destroy(registry);
+        wl_display_disconnect(display);
+        return EXIT_FAILURE;
+    }
+
     if (state.initialization_failed) {
         fprintf(stderr, "Something went wrong with initialization, exiting...\n");
-        // TODO: remember to clean-up here. Not important now when protoptyping and building MVP.
         wl_registry_destroy(registry);
         destroy_outputs(&state);
         wl_display_disconnect(display);
@@ -242,6 +269,7 @@ int main(void) {
     wl_compositor_destroy(state.wl_compositor);
     destroy_outputs(&state);
     wl_registry_destroy(registry);
+    wl_shm_destroy(state.wl_shm);
     wl_display_disconnect(display);
 
 	return EXIT_SUCCESS;
