@@ -200,6 +200,13 @@ int main(void) {
         return EXIT_FAILURE;
     }
 
+    if (state.outputs == NULL) {
+        fprintf(stderr, "No outputs were found...\n");
+        wl_registry_destroy(registry);
+        wl_display_disconnect(display);
+        return EXIT_FAILURE;
+    }
+
     if (state.initialization_failed) {
         fprintf(stderr, "Something went wrong with initialization, exiting...\n");
         // TODO: remember to clean-up here. Not important now when protoptyping and building MVP.
