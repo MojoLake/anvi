@@ -7,11 +7,30 @@
 
 #include "ext-session-lock-v1-client-protocol.h"
 
+struct coldwrite_output {
+    uint32_t registry_name;
+    struct wl_output *proxy;
+    struct coldwrite_output *next;
+};
 
 struct coldwrite_state {
     struct ext_session_lock_manager_v1 *session_lock_manager;
     struct wl_compositor *wl_compositor;
+    struct coldwrite_output *outputs;
+    bool initialization_failed;
 };
+
+static void destroy_output_proxy(struct wl_output *output) {
+    if (output == NULL) {
+        return;
+    }
+
+    if (wl_output_get_version(output) >= WL_OUTPUT_RELEASE_SINCE_VERSION) {
+        wl_output_release(output);
+    } else {
+        wl_output_destroy(output);
+    }
+}
 
 static void registry_global(
     void *data,
@@ -55,6 +74,41 @@ static void registry_global(
         );
     }
 
+    if (strcmp(interface, wl_output_interface.name) == 0) {
+        uint32_t client_version = (uint32_t)wl_output_interface.version;
+
+        if (client_version > bind_version) {
+            client_version = bind_version;
+        }
+
+        struct coldwrite_output *new_output = calloc(1, sizeof(struct coldwrite_output));
+
+        if (new_output == NULL) {
+            fprintf(stderr, "Failed to allocate memory for a new output\n");
+            state->initialization_failed = true;
+            return;
+        }
+
+        new_output->registry_name = name;
+        
+        new_output->proxy = wl_registry_bind(
+            registry,
+            name,
+            &wl_output_interface,
+            client_version
+        );
+
+        if (new_output->proxy == NULL) {
+            fprintf(stderr, "Binding wl_output returned NULL\n");
+            state->initialization_failed = true;
+            free(new_output);
+            return;
+        }
+
+        new_output->next = state->outputs;
+        state->outputs = new_output;
+    }
+
     printf("global: name=%" PRIu32 ", interface=%s, version=%" PRIu32 "\n", name, interface, version);
 }
 
@@ -63,10 +117,31 @@ static void registry_global_remove(
       struct wl_registry *registry,
       uint32_t name
 ) {
-      (void)data;
-      (void)registry;
+    (void)registry;
 
-      printf("global removed: name=%" PRIu32 "\n", name);
+    struct coldwrite_state* state = data;
+
+    struct coldwrite_output *current_output = state->outputs;
+
+    struct coldwrite_output *previous_output = nullptr;
+
+    while (current_output != NULL) {
+        if (current_output->registry_name == name) {
+            if (previous_output != NULL) {
+                previous_output->next = current_output->next;
+            } else {
+                state->outputs = current_output->next;
+            }
+
+            destroy_output_proxy(current_output->proxy);
+            free(current_output);
+            printf("global removed: name=%" PRIu32 "\n", name);
+        }
+
+        previous_output = current_output;
+        current_output = current_output->next;
+    }
+
 }
 
 static const struct wl_registry_listener registry_listener = {
@@ -107,6 +182,12 @@ int main(void) {
         wl_registry_destroy(registry);
         wl_display_disconnect(display);
         return EXIT_FAILURE;
+    }
+
+    if (state.initialization_failed) {
+        fprintf(stderr, "Something went wrong with initialization, exiting...\n");
+        // TODO: remember to clean-up here. Not important now when protoptyping and building MVP.
+        return 1;
     }
 
     if (state.session_lock_manager == NULL) {
