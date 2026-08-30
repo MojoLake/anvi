@@ -7,6 +7,8 @@
 
 #include "ext-session-lock-v1-client-protocol.h"
 
+#include "keyboard.h"
+
 struct coldwrite_output {
     uint32_t registry_name;
     struct wl_output *proxy;
@@ -20,9 +22,49 @@ struct coldwrite_state {
     struct wl_shm *wl_shm;
     struct wl_display *display;
     struct wl_registry *registry;
+    struct wl_seat *seat;
+    struct coldwrite_keyboard *keyboard;
     bool initialization_failed;
 };
 
+
+void seat_capabilities(void *data, struct wl_seat *seat, uint32_t capabilities) {
+
+    struct coldwrite_state *state = data;
+    
+    if (capabilities & WL_SEAT_CAPABILITY_KEYBOARD) {
+        printf("Seat has a keyboard\n");
+        if (state->keyboard == NULL) {
+            state->keyboard = coldwrite_keyboard_create(seat);
+
+            if (state->keyboard == NULL) {
+                state->initialization_failed = true;
+            }
+        }
+    } else {
+        printf("Seat doesn't have a keyboard (anymore?)\n");
+        if (state->keyboard != NULL) {
+            coldwrite_keyboard_destroy(state->keyboard);
+            state->keyboard = NULL;
+        }
+    }
+
+    if (capabilities & WL_SEAT_CAPABILITY_POINTER) {
+        printf("Seat has a pointer\n");
+    }
+}
+
+void seat_name(void *data, struct wl_seat *seat, const char *name) {
+    (void)data;
+    (void)seat;
+
+    printf("Seat name: %s\n", name);
+}
+
+static const struct wl_seat_listener seat_listener = {
+    .capabilities = seat_capabilities,
+    .name = seat_name,
+};
 
 static void destroy_output_proxy(struct wl_output *output) {
     if (output == NULL) {
@@ -33,6 +75,18 @@ static void destroy_output_proxy(struct wl_output *output) {
         wl_output_release(output);
     } else {
         wl_output_destroy(output);
+    }
+}
+
+static void destroy_seat_proxy(struct wl_seat* seat) {
+    if (seat == NULL) {
+        return;
+    }
+
+    if (wl_seat_get_version(seat) >= WL_SEAT_RELEASE_SINCE_VERSION) {
+        wl_seat_release(seat);
+    } else {
+        wl_seat_destroy(seat);
     }
 }
 
@@ -68,10 +122,20 @@ static void destroy_coldwrite_state(struct coldwrite_state *state) {
         state->session_lock_manager = NULL;
     }
 
+    if (state->keyboard != NULL) {
+        coldwrite_keyboard_destroy(state->keyboard);
+        state->keyboard = NULL;
+    }
+
+    if (state->seat != NULL) {
+        destroy_seat_proxy(state->seat);
+        state->seat = NULL;
+    }
+
     if (state->registry != NULL) {
         wl_registry_destroy(state->registry);
         state->registry = NULL;
-    } 
+    }
 
     if (state->display != NULL) {
         wl_display_disconnect(state->display);    
@@ -176,6 +240,22 @@ static void registry_global(
         }
     }
 
+    if (strcmp(interface, wl_seat_interface.name) == 0) {
+        uint32_t client_version = wl_seat_interface.version;
+        if (client_version > bind_version) {
+            client_version = bind_version;
+        }
+
+        state->seat = wl_registry_bind(
+            registry,
+            name,
+            &wl_seat_interface,
+            client_version
+        );
+
+        wl_seat_add_listener(state->seat, &seat_listener, state);
+    }
+
     printf("global: name=%" PRIu32 ", interface=%s, version=%" PRIu32 "\n", name, interface, version);
 }
 
@@ -211,6 +291,7 @@ static void registry_global_remove(
     }
 
 }
+
 
 static const struct wl_registry_listener registry_listener = {
     .global = registry_global,
@@ -280,11 +361,43 @@ int main(void) {
         return EXIT_FAILURE;
     }
 
+    if (wl_display_roundtrip(state.display) < 0) {
+        fprintf(stderr, "Failed to receive initial Wayland object events\n");
+        destroy_coldwrite_state(&state);
+        return EXIT_FAILURE;
+    }
+
+    if (state.initialization_failed) {
+        fprintf(stderr, "Something went wrong with initialization, exiting...\n");
+        destroy_coldwrite_state(&state);
+        return EXIT_FAILURE;
+    }
+
+    if (state.keyboard == NULL) {
+        fprintf(stderr, "Keyboard state is NULL...\n");
+        destroy_coldwrite_state(&state);
+        return EXIT_FAILURE;
+    }
+
+    if (wl_display_roundtrip(state.display) < 0) {
+        fprintf(stderr, "Failed to receive initial keyboard events");
+        destroy_coldwrite_state(&state);
+        return EXIT_FAILURE;
+    }
+
+    if (state.initialization_failed) {
+        fprintf(stderr, "Something went wrong with initialization, exiting...\n");
+        destroy_coldwrite_state(&state);
+        return EXIT_FAILURE;
+    }
+
     printf(
         "Built with support for %s version %d\n",
         ext_session_lock_manager_v1_interface.name,
         ext_session_lock_manager_v1_interface.version
     );
+
+    // printf("%", state. & WL_SEAT_CAPABILITY_KEYBOARD);
 
     destroy_coldwrite_state(&state);
 
