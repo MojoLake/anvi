@@ -104,14 +104,15 @@ static void key(void *data,
 }
 
 static void modifiers(void *data,
-			  struct wl_keyboard *keyboard,
+			  struct wl_keyboard *wl_keyboard,
 			  uint32_t serial,
 			  uint32_t mods_depressed,
 			  uint32_t mods_latched,
 			  uint32_t mods_locked,
 			  uint32_t group) {
-    (void)data;
-    (void)keyboard;
+    (void)wl_keyboard;
+    struct coldwrite_keyboard *keyboard = (struct coldwrite_keyboard *)data;
+
     printf(
         "Inside modifiers we have %" PRIu32 " %" PRIu32 " %" PRIu32
         " %" PRIu32 " %" PRIu32 "\n",
@@ -121,6 +122,14 @@ static void modifiers(void *data,
         mods_locked,
         group
     );
+
+    if (keyboard->xkb_state == NULL) {
+        fprintf(stderr, "Keyboard xkb_state is NULL...\n");
+        return;
+    }
+
+    xkb_state_update_mask(keyboard->xkb_state, mods_depressed, mods_latched, mods_locked, 0, 0, group);
+
 }
 
 static void repeat_info(void *data, struct wl_keyboard *keyboard, int32_t rate, int32_t delay) {
