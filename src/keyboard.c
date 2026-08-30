@@ -18,7 +18,12 @@ static void keymap(void *data,
 		       uint32_t size) {
    (void)data;
    (void)keyboard;
-   printf("Format, fd, size: %d %d %d\n", format, fd, size);
+   printf(
+       "Format, fd, size: %" PRIu32 " %" PRId32 " %" PRIu32 "\n",
+       format,
+       fd,
+       size
+   );
    close(fd);
 }
 
@@ -31,7 +36,7 @@ static void enter(void *data,
     (void)keyboard;
     (void)surface;
     (void)keys;
-    printf("Serial: %d\n", serial);
+    printf("Serial: %" PRIu32 "\n", serial);
 }
 
 static void leave(void *data,
@@ -41,7 +46,7 @@ static void leave(void *data,
     (void)data;
     (void)keyboard;
     (void)surface;
-    printf("Serial: %d\n", serial);
+    printf("Serial: %" PRIu32 "\n", serial);
 }
 
 static void key(void *data,
@@ -52,7 +57,14 @@ static void key(void *data,
 		    uint32_t state) {
     (void)data;
     (void)keyboard;
-    printf("Key %d with serial = %d was pressed at time %d with state %d\n", key, serial, time, state);
+    printf(
+        "Key %" PRIu32 " with serial = %" PRIu32
+        " was pressed at time %" PRIu32 " with state %" PRIu32 "\n",
+        key,
+        serial,
+        time,
+        state
+    );
 }
 
 static void modifiers(void *data,
@@ -64,7 +76,15 @@ static void modifiers(void *data,
 			  uint32_t group) {
     (void)data;
     (void)keyboard;
-    printf("Inside modifiers we have %d %d %d %d %d\n", serial, mods_depressed, mods_latched, mods_locked, group);
+    printf(
+        "Inside modifiers we have %" PRIu32 " %" PRIu32 " %" PRIu32
+        " %" PRIu32 " %" PRIu32 "\n",
+        serial,
+        mods_depressed,
+        mods_latched,
+        mods_locked,
+        group
+    );
 }
 
 static void repeat_info(void *data, struct wl_keyboard *keyboard, int32_t rate, int32_t delay) {
