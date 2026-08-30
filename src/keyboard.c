@@ -4,27 +4,63 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <inttypes.h>
+#include <assert.h>
+#include <sys/mman.h>
 
 #include <wayland-client.h>
+#include <xkbcommon/xkbcommon.h>
 
 struct coldwrite_keyboard {
     struct wl_keyboard *proxy;
+    struct xkb_context *xkb_context;
+    struct xkb_keymap *xkb_keymap;
+    struct xkb_state *xkb_state;
 };
 
 static void keymap(void *data,
-		       struct wl_keyboard *keyboard,
+		       struct wl_keyboard *wl_keyboard,
 		       uint32_t format,
 		       int32_t fd,
 		       uint32_t size) {
-   (void)data;
-   (void)keyboard;
-   printf(
-       "Format, fd, size: %" PRIu32 " %" PRId32 " %" PRIu32 "\n",
-       format,
-       fd,
-       size
-   );
-   close(fd);
+
+    (void)wl_keyboard; // The argument is redundant since data also contains the wl_keyboard object.
+    
+    if (format != WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1) {
+        printf("Wrong wl keyboard keymap format, exiting keymap callback...\n");
+        return;
+    }
+    
+    struct coldwrite_keyboard *keyboard = (struct coldwrite_keyboard *)data;
+
+    char* map_shm = mmap(NULL, size, PROT_READ, MAP_PRIVATE, fd, 0);
+   assert(map_shm != MAP_FAILED);
+
+    struct xkb_keymap *new_keymap = xkb_keymap_new_from_string(keyboard->xkb_context, map_shm, XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_COMPILE_NO_FLAGS);
+
+    munmap(map_shm, size);
+    close(fd);
+
+    if (new_keymap == NULL) {
+        fprintf(stderr, "Failed to compile XKB keymap\n");
+        return;
+    }
+
+
+    struct xkb_state *new_state = xkb_state_new(new_keymap);
+
+    if (new_state == NULL) {
+        fprintf(stderr, "Failed to create XKB state\n");
+        xkb_keymap_unref(new_keymap);
+        return;
+    }
+
+    xkb_state_unref(keyboard->xkb_state);
+    xkb_keymap_unref(keyboard->xkb_keymap);
+
+    keyboard->xkb_keymap = new_keymap;
+    keyboard->xkb_state = new_state;
+
+    printf("Created new xkb_keymap and xkb_state!\n");
 }
 
 static void enter(void *data,
@@ -136,6 +172,14 @@ struct coldwrite_keyboard *coldwrite_keyboard_create(struct wl_seat *seat) {
         return NULL;
     }
 
+    keyboard->xkb_context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+    
+    if (keyboard->xkb_context == NULL) {
+        release_or_destroy_keyboard(keyboard->proxy);
+        free(keyboard);
+        return NULL;
+    }
+
     return keyboard;
 }
 
@@ -146,6 +190,15 @@ void coldwrite_keyboard_destroy(struct coldwrite_keyboard *keyboard) {
     }
     if (keyboard->proxy != NULL) {
         release_or_destroy_keyboard(keyboard->proxy);
+    }
+    if (keyboard->xkb_state != NULL) {
+        xkb_state_unref(keyboard->xkb_state);
+    }
+    if (keyboard->xkb_keymap != NULL) {
+        xkb_keymap_unref(keyboard->xkb_keymap);
+    }
+    if (keyboard->xkb_context != NULL) {
+        xkb_context_unref(keyboard->xkb_context);
     }
     free(keyboard);
 }

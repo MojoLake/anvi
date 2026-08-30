@@ -9,6 +9,8 @@ project(
   ],
 )
 
+xkbcommon = dependency('xkbcommon')
+
 wayland_client = dependency('wayland-client', version: '>=1.20')
 wayland_protocols = dependency('wayland-protocols')
 wayland_scanner = find_program('wayland-scanner')
@@ -58,5 +60,8 @@ executable(
     session_lock_header,
     session_lock_code,
   ],
-  dependencies: wayland_client
+  dependencies: [
+    wayland_client,
+    xkbcommon,
+  ]
 )
