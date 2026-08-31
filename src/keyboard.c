@@ -4,17 +4,18 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <inttypes.h>
-#include <assert.h>
 #include <sys/mman.h>
 
 #include <wayland-client.h>
 #include <xkbcommon/xkbcommon.h>
+#include <xkbcommon/xkbcommon-keysyms.h>
 
 struct coldwrite_keyboard {
     struct wl_keyboard *proxy;
     struct xkb_context *xkb_context;
     struct xkb_keymap *xkb_keymap;
     struct xkb_state *xkb_state;
+    bool key_pressed;
 };
 
 static void keymap(void *data,
@@ -27,13 +28,19 @@ static void keymap(void *data,
     
     if (format != WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1) {
         printf("Wrong wl keyboard keymap format, exiting keymap callback...\n");
+        close(fd);
         return;
     }
     
     struct coldwrite_keyboard *keyboard = (struct coldwrite_keyboard *)data;
 
     char* map_shm = mmap(NULL, size, PROT_READ, MAP_PRIVATE, fd, 0);
-   assert(map_shm != MAP_FAILED);
+
+    if (map_shm == MAP_FAILED) {
+        fprintf(stderr, "Mmap failed!\n");
+        close(fd);
+        return;
+    }
 
     struct xkb_keymap *new_keymap = xkb_keymap_new_from_string(keyboard->xkb_context, map_shm, XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_COMPILE_NO_FLAGS);
 
@@ -86,21 +93,45 @@ static void leave(void *data,
 }
 
 static void key(void *data,
-		    struct wl_keyboard *keyboard,
+		    struct wl_keyboard *wl_keyboard,
 		    uint32_t serial,
 		    uint32_t time,
-		    uint32_t key,
-		    uint32_t state) {
-    (void)data;
-    (void)keyboard;
+		    uint32_t wayland_keycode,
+		    uint32_t key_state) {
+    (void)wl_keyboard;
+
+    struct coldwrite_keyboard *keyboard = (struct coldwrite_keyboard *)data;
+
     printf(
         "Key %" PRIu32 " with serial = %" PRIu32
         " was pressed at time %" PRIu32 " with state %" PRIu32 "\n",
-        key,
+        wayland_keycode,
         serial,
         time,
-        state
+        key_state
     );
+
+    if (keyboard->xkb_state == NULL) {
+        fprintf(stderr, "No xkb_state found for keyboard...\n");
+        return;
+    }
+
+    if (key_state != WL_KEYBOARD_KEY_STATE_PRESSED) {
+        printf("Returning from key-callback since the key was not pressed...\n");
+        return;
+    }
+
+    xkb_keycode_t xkb_keycode = wayland_keycode + 8;
+
+    // xkb_keysym_t keysym = xkb_state_key_get_one_sym(keyboard->xkb_state, xkb_keycode);
+    
+    char text[64];
+    int length = xkb_state_key_get_utf8(keyboard->xkb_state, xkb_keycode, text, sizeof(text));
+
+    if (length > 0  && (size_t)length < sizeof(text)) {
+        // A text-producing key was typed!
+        keyboard->key_pressed = true;
+    }
 }
 
 static void modifiers(void *data,
@@ -210,4 +241,18 @@ void coldwrite_keyboard_destroy(struct coldwrite_keyboard *keyboard) {
         xkb_context_unref(keyboard->xkb_context);
     }
     free(keyboard);
+}
+
+bool coldwrite_keyboard_is_ready(const struct coldwrite_keyboard *keyboard) {
+    if (keyboard == NULL) {
+        return false;
+    }
+    return keyboard->xkb_state != NULL && keyboard->proxy != NULL && keyboard->xkb_context != NULL && keyboard->xkb_keymap != NULL;
+}
+
+bool coldwrite_keyboard_key_was_pressed(const struct coldwrite_keyboard *keyboard) {
+    if (keyboard == NULL) {
+        return false;
+    }
+    return keyboard->key_pressed;
 }
