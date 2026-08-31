@@ -1,0 +1,7 @@
+spawn-at-startup "ghostty"
+
+hotkey-overlay {
+  skip-at-startup
+}
+
+binds {}
