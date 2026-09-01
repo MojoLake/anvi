@@ -52,6 +52,31 @@ void destroy_outputs(struct anvi_state *state) {
     state->outputs = NULL;
 }
 
+bool remove_anvi_output(struct anvi_state *state, uint32_t registry_name) {
+    
+    struct anvi_output *current_output = state->outputs;
+
+    struct anvi_output *previous_output = nullptr;
+
+    while (current_output != NULL) {
+        if (current_output->registry_name == registry_name) {
+            if (previous_output != NULL) {
+                previous_output->next = current_output->next;
+            } else {
+                state->outputs = current_output->next;
+            }
+
+            destroy_anvi_output(current_output);
+            return true;
+        }
+
+        previous_output = current_output;
+        current_output = current_output->next;
+    }
+
+    return false; // Didn't find the output to be removed
+}
+
 int create_and_bind_anvi_output(struct anvi_state* state, struct wl_registry *registry, uint32_t name, uint32_t bind_version) {
 
     uint32_t client_version = (uint32_t)wl_output_interface.version;

@@ -317,28 +317,12 @@ static void registry_global_remove(
 
     struct anvi_state* state = data;
 
-    struct anvi_output *current_output = state->outputs;
-
-    struct anvi_output *previous_output = nullptr;
-
-    while (current_output != NULL) {
-        if (current_output->registry_name == name) {
-            if (previous_output != NULL) {
-                previous_output->next = current_output->next;
-            } else {
-                state->outputs = current_output->next;
-            }
-
-            destroy_output_proxy(current_output->proxy);
-            free(current_output);
-            printf("global removed: name=%" PRIu32 "\n", name);
-            return;
-        }
-
-        previous_output = current_output;
-        current_output = current_output->next;
+    if (remove_anvi_output(state, name)) {
+        // yay we removed it. What do we do with this information though? 
+        printf("global removed: name=%" PRIu32 "\n", name);
     }
 
+    // TODO: handle also other things than outputs.
 }
 
 static const struct wl_registry_listener registry_listener = {
