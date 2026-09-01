@@ -8,6 +8,7 @@
 #include <errno.h>
 
 #include "app.h"
+#include "output.h"
 
 void seat_capabilities(void *data, struct wl_seat *seat, uint32_t capabilities) {
 
@@ -47,18 +48,6 @@ static const struct wl_seat_listener seat_listener = {
     .name = seat_name,
 };
 
-static void destroy_output_proxy(struct wl_output *output) {
-    if (output == NULL) {
-        return;
-    }
-
-    if (wl_output_get_version(output) >= WL_OUTPUT_RELEASE_SINCE_VERSION) {
-        wl_output_release(output);
-    } else {
-        wl_output_destroy(output);
-    }
-}
-
 static void destroy_seat_proxy(struct wl_seat* seat) {
     if (seat == NULL) {
         return;
@@ -71,24 +60,6 @@ static void destroy_seat_proxy(struct wl_seat* seat) {
     }
 }
 
-static void destroy_outputs(struct anvi_state *state) {
-    struct anvi_output *current_output = state->outputs;
-
-    while (current_output != NULL) {
-        struct anvi_output *next_output = current_output->next;
-
-        wl_buffer_destroy(current_output->buffer);
-        ext_session_lock_surface_v1_destroy(current_output->lock_surface);
-        wl_surface_destroy(current_output->surface);
-
-        destroy_output_proxy(current_output->proxy);
-        free(current_output);
-
-        current_output = next_output;
-    }
-
-    state->outputs = NULL;
-}
 
 void destroy_anvi_state(struct anvi_state *state) {
     destroy_outputs(state);

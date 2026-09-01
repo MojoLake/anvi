@@ -58,6 +58,7 @@ executable(
     'src/main.c',
     'src/session_setup.c',
     'src/keyboard.c',
+    'src/output.c',
     session_lock_header,
     session_lock_code,
   ],

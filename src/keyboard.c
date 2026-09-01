@@ -52,7 +52,6 @@ static void keymap(void *data,
         return;
     }
 
-
     struct xkb_state *new_state = xkb_state_new(new_keymap);
 
     if (new_state == NULL) {
