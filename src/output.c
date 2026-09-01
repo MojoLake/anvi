@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 
 #include <wayland-client.h>
 
@@ -45,4 +46,43 @@ void destroy_outputs(struct anvi_state *state) {
     }
 
     state->outputs = NULL;
+}
+
+int create_and_bind_anvi_output(struct anvi_state* state, struct wl_registry *registry, uint32_t name, uint32_t bind_version) {
+
+    uint32_t client_version = (uint32_t)wl_output_interface.version;
+
+    if (client_version > bind_version) {
+        client_version = bind_version;
+    }
+
+    struct anvi_output *new_output = calloc(1, sizeof(struct anvi_output));
+
+    if (new_output == NULL) {
+        fprintf(stderr, "Failed to allocate memory for a new output\n");
+        state->initialization_failed = true;
+        return EXIT_FAILURE;
+    }
+
+    new_output->registry_name = name;
+    new_output->state = state;
+    
+    new_output->proxy = wl_registry_bind(
+        registry,
+        name,
+        &wl_output_interface,
+        client_version
+    );
+
+    if (new_output->proxy == NULL) {
+        fprintf(stderr, "Binding wl_output returned NULL\n");
+        state->initialization_failed = true;
+        free(new_output);
+        return EXIT_FAILURE;
+    }
+
+    new_output->next = state->outputs;
+    state->outputs = new_output;
+
+    return EXIT_SUCCESS;
 }

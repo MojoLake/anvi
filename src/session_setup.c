@@ -264,39 +264,9 @@ static void registry_global(
     }
 
     if (strcmp(interface, wl_output_interface.name) == 0) {
-        uint32_t client_version = (uint32_t)wl_output_interface.version;
-
-        if (client_version > bind_version) {
-            client_version = bind_version;
-        }
-
-        struct anvi_output *new_output = calloc(1, sizeof(struct anvi_output));
-
-        if (new_output == NULL) {
-            fprintf(stderr, "Failed to allocate memory for a new output\n");
-            state->initialization_failed = true;
+        if (create_and_bind_anvi_output(state, registry, name, bind_version) == EXIT_FAILURE) {
             return;
         }
-
-        new_output->registry_name = name;
-        new_output->state = state;
-        
-        new_output->proxy = wl_registry_bind(
-            registry,
-            name,
-            &wl_output_interface,
-            client_version
-        );
-
-        if (new_output->proxy == NULL) {
-            fprintf(stderr, "Binding wl_output returned NULL\n");
-            state->initialization_failed = true;
-            free(new_output);
-            return;
-        }
-
-        new_output->next = state->outputs;
-        state->outputs = new_output;
     }
 
     if (strcmp(interface, wl_shm_interface.name) == 0) {
