@@ -3,7 +3,7 @@
 
 #include "app.h"
 
-int setup_initial_state(struct coldwrite_state *state);
-void destroy_coldwrite_state(struct coldwrite_state *state);
+int setup_initial_state(struct anvi_state *state);
+void destroy_anvi_state(struct anvi_state *state);
 
 #endif

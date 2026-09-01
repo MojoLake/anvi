@@ -1,5 +1,5 @@
 {
-    description = "Coldwrite development environment";
+    description = "Anvi development environment";
 
     inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
 

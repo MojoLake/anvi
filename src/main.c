@@ -22,7 +22,7 @@ int exit_with_failure_and_message(char* msg) {
 
 int main(void) {
 
-    struct coldwrite_state state = {0};
+    struct anvi_state state = {0};
 
     if (setup_initial_state(&state) == EXIT_FAILURE) {
         return EXIT_FAILURE;
@@ -44,7 +44,7 @@ int main(void) {
             break;
         }
 
-        if (state.session_is_locked && coldwrite_keyboard_key_was_pressed(state.keyboard)) {
+        if (state.session_is_locked && anvi_keyboard_key_was_pressed(state.keyboard)) {
             ext_session_lock_v1_unlock_and_destroy(state.session_lock);
 
             state.session_lock = NULL;
@@ -61,7 +61,7 @@ int main(void) {
         ext_session_lock_manager_v1_interface.version
     );
 
-    destroy_coldwrite_state(&state);
+    destroy_anvi_state(&state);
 
 	return EXIT_SUCCESS;
 }

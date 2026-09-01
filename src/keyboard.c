@@ -10,7 +10,7 @@
 #include <xkbcommon/xkbcommon.h>
 #include <xkbcommon/xkbcommon-keysyms.h>
 
-struct coldwrite_keyboard {
+struct anvi_keyboard {
     struct wl_keyboard *proxy;
     struct xkb_context *xkb_context;
     struct xkb_keymap *xkb_keymap;
@@ -32,7 +32,7 @@ static void keymap(void *data,
         return;
     }
     
-    struct coldwrite_keyboard *keyboard = (struct coldwrite_keyboard *)data;
+    struct anvi_keyboard *keyboard = (struct anvi_keyboard *)data;
 
     char* map_shm = mmap(NULL, size, PROT_READ, MAP_PRIVATE, fd, 0);
 
@@ -100,7 +100,7 @@ static void key(void *data,
 		    uint32_t key_state) {
     (void)wl_keyboard;
 
-    struct coldwrite_keyboard *keyboard = (struct coldwrite_keyboard *)data;
+    struct anvi_keyboard *keyboard = (struct anvi_keyboard *)data;
 
     printf(
         "Key %" PRIu32 " with serial = %" PRIu32
@@ -142,7 +142,7 @@ static void modifiers(void *data,
 			  uint32_t mods_locked,
 			  uint32_t group) {
     (void)wl_keyboard;
-    struct coldwrite_keyboard *keyboard = (struct coldwrite_keyboard *)data;
+    struct anvi_keyboard *keyboard = (struct anvi_keyboard *)data;
 
     printf(
         "Inside modifiers we have %" PRIu32 " %" PRIu32 " %" PRIu32
@@ -190,8 +190,8 @@ static void release_or_destroy_keyboard(struct wl_keyboard* keyboard) {
     }
 }
 
-struct coldwrite_keyboard *coldwrite_keyboard_create(struct wl_seat *seat) {
-    struct coldwrite_keyboard *keyboard = calloc(1, sizeof(struct coldwrite_keyboard)); 
+struct anvi_keyboard *anvi_keyboard_create(struct wl_seat *seat) {
+    struct anvi_keyboard *keyboard = calloc(1, sizeof(struct anvi_keyboard));
 
     if (keyboard == NULL) {
         fprintf(stderr, "Failed to allocate memory for keyboard struct...\n");
@@ -224,7 +224,7 @@ struct coldwrite_keyboard *coldwrite_keyboard_create(struct wl_seat *seat) {
 }
 
 
-void coldwrite_keyboard_destroy(struct coldwrite_keyboard *keyboard) {
+void anvi_keyboard_destroy(struct anvi_keyboard *keyboard) {
     if (keyboard == NULL) {
         return;
     }
@@ -243,14 +243,14 @@ void coldwrite_keyboard_destroy(struct coldwrite_keyboard *keyboard) {
     free(keyboard);
 }
 
-bool coldwrite_keyboard_is_ready(const struct coldwrite_keyboard *keyboard) {
+bool anvi_keyboard_is_ready(const struct anvi_keyboard *keyboard) {
     if (keyboard == NULL) {
         return false;
     }
     return keyboard->xkb_state != NULL && keyboard->proxy != NULL && keyboard->xkb_context != NULL && keyboard->xkb_keymap != NULL;
 }
 
-bool coldwrite_keyboard_key_was_pressed(const struct coldwrite_keyboard *keyboard) {
+bool anvi_keyboard_key_was_pressed(const struct anvi_keyboard *keyboard) {
     if (keyboard == NULL) {
         return false;
     }

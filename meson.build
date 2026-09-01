@@ -1,5 +1,5 @@
 project(
-  'coldwrite',
+  'anvi',
   'c',
   version: '0.1.0',
   default_options: [
@@ -53,7 +53,7 @@ session_lock_code = custom_target(
 )
 
 executable(
-  'coldwrite',
+  'anvi',
   [
     'src/main.c',
     'src/session_setup.c',

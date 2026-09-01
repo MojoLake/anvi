@@ -11,12 +11,12 @@
 
 void seat_capabilities(void *data, struct wl_seat *seat, uint32_t capabilities) {
 
-    struct coldwrite_state *state = data;
+    struct anvi_state *state = data;
     
     if (capabilities & WL_SEAT_CAPABILITY_KEYBOARD) {
         printf("Seat has a keyboard\n");
         if (state->keyboard == NULL) {
-            state->keyboard = coldwrite_keyboard_create(seat);
+            state->keyboard = anvi_keyboard_create(seat);
 
             if (state->keyboard == NULL) {
                 state->initialization_failed = true;
@@ -25,7 +25,7 @@ void seat_capabilities(void *data, struct wl_seat *seat, uint32_t capabilities) 
     } else {
         printf("Seat doesn't have a keyboard (anymore?)\n");
         if (state->keyboard != NULL) {
-            coldwrite_keyboard_destroy(state->keyboard);
+            anvi_keyboard_destroy(state->keyboard);
             state->keyboard = NULL;
         }
     }
@@ -71,11 +71,11 @@ static void destroy_seat_proxy(struct wl_seat* seat) {
     }
 }
 
-static void destroy_outputs(struct coldwrite_state *state) {
-    struct coldwrite_output *current_output = state->outputs;
+static void destroy_outputs(struct anvi_state *state) {
+    struct anvi_output *current_output = state->outputs;
 
     while (current_output != NULL) {
-        struct coldwrite_output *next_output = current_output->next;
+        struct anvi_output *next_output = current_output->next;
 
         wl_buffer_destroy(current_output->buffer);
         ext_session_lock_surface_v1_destroy(current_output->lock_surface);
@@ -90,7 +90,7 @@ static void destroy_outputs(struct coldwrite_state *state) {
     state->outputs = NULL;
 }
 
-void destroy_coldwrite_state(struct coldwrite_state *state) {
+void destroy_anvi_state(struct anvi_state *state) {
     destroy_outputs(state);
     if (state->wl_shm != NULL) {
         wl_shm_destroy(state->wl_shm);
@@ -108,7 +108,7 @@ void destroy_coldwrite_state(struct coldwrite_state *state) {
     }
 
     if (state->keyboard != NULL) {
-        coldwrite_keyboard_destroy(state->keyboard);
+        anvi_keyboard_destroy(state->keyboard);
         state->keyboard = NULL;
     }
 
@@ -129,7 +129,7 @@ void destroy_coldwrite_state(struct coldwrite_state *state) {
 }
 
 static int allocate_shm_file(size_t size) {
-    int fd = memfd_create("coldwrite-buffer", MFD_CLOEXEC);
+    int fd = memfd_create("anvi-buffer", MFD_CLOEXEC);
 
     if (fd < 0) {
         return -1;
@@ -154,8 +154,8 @@ static void lock_surface_configure(
     uint32_t width,
     uint32_t height) {
     
-    struct coldwrite_output *output = data;
-    struct coldwrite_state *state = output->state;
+    struct anvi_output *output = data;
+    struct anvi_state *state = output->state;
 
     output->width = width;
     output->height = height;
@@ -231,7 +231,7 @@ static const struct ext_session_lock_surface_v1_listener lock_surface_listener =
 
 static void session_locked(void *data, struct ext_session_lock_v1 *ext_session_lock_v1) {
     (void)ext_session_lock_v1;
-    struct coldwrite_state *state = data;
+    struct anvi_state *state = data;
     state->session_is_locked = true;
     printf("The session is locked!\n");
 }
@@ -239,7 +239,7 @@ static void session_locked(void *data, struct ext_session_lock_v1 *ext_session_l
 static void session_finished(void *data, struct ext_session_lock_v1 *ext_session_lock_v1) {
     (void)ext_session_lock_v1;
 
-    struct coldwrite_state *state = data;
+    struct anvi_state *state = data;
     state->session_is_finished = true;
 
     printf("The lock has been rejected or terminated.\n");
@@ -257,7 +257,7 @@ static void registry_global(
     const char *interface,
     uint32_t version
 ) {
-    struct coldwrite_state *state = data;
+    struct anvi_state *state = data;
 
     uint32_t bind_version = version;
 
@@ -299,7 +299,7 @@ static void registry_global(
             client_version = bind_version;
         }
 
-        struct coldwrite_output *new_output = calloc(1, sizeof(struct coldwrite_output));
+        struct anvi_output *new_output = calloc(1, sizeof(struct anvi_output));
 
         if (new_output == NULL) {
             fprintf(stderr, "Failed to allocate memory for a new output\n");
@@ -374,11 +374,11 @@ static void registry_global_remove(
 ) {
     (void)registry;
 
-    struct coldwrite_state* state = data;
+    struct anvi_state* state = data;
 
-    struct coldwrite_output *current_output = state->outputs;
+    struct anvi_output *current_output = state->outputs;
 
-    struct coldwrite_output *previous_output = nullptr;
+    struct anvi_output *previous_output = nullptr;
 
     while (current_output != NULL) {
         if (current_output->registry_name == name) {
@@ -410,13 +410,13 @@ static int exit_with_failure_and_message(char* msg) {
     return EXIT_FAILURE;
 }
 
-static int exit_with_failure_and_message_and_cleanup_state(char* msg, struct coldwrite_state *state) {
+static int exit_with_failure_and_message_and_cleanup_state(char* msg, struct anvi_state *state) {
 
-    destroy_coldwrite_state(state);
+    destroy_anvi_state(state);
     return exit_with_failure_and_message(msg);
 }
 
-int setup_initial_state(struct coldwrite_state *state) {
+int setup_initial_state(struct anvi_state *state) {
 
 
    	state->display = wl_display_connect(NULL);
@@ -481,7 +481,7 @@ int setup_initial_state(struct coldwrite_state *state) {
 
     ext_session_lock_v1_add_listener(state->session_lock, &session_lock_listener, state);
 
-    for (struct coldwrite_output *output = state->outputs; output != NULL; output = output->next) {
+    for (struct anvi_output *output = state->outputs; output != NULL; output = output->next) {
         output->surface = wl_compositor_create_surface(state->wl_compositor);
 
         if (output->surface == NULL) {
@@ -507,5 +507,4 @@ int setup_initial_state(struct coldwrite_state *state) {
 
     return EXIT_SUCCESS;
 }
-
 
