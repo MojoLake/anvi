@@ -5,7 +5,6 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <errno.h>
-#include <string.h>
 
 #include <wayland-client.h>
 
@@ -220,3 +219,35 @@ static void lock_surface_configure(
 const struct ext_session_lock_surface_v1_listener lock_surface_listener = {
     .configure = lock_surface_configure,
 };
+
+
+int create_surfaces_for_outputs(struct anvi_state *state) {
+
+    for (struct anvi_output *output = state->outputs; output != NULL; output = output->next) {
+        output->surface = wl_compositor_create_surface(state->wl_compositor);
+
+        if (output->surface == NULL) {
+            // return exit_with_failure_and_message_and_cleanup_state("Received output surface is NULL, exiting...\n", state);
+            return EXIT_FAILURE;
+        }
+
+        output->lock_surface = ext_session_lock_v1_get_lock_surface(
+                state->session_lock,
+                output->surface,
+                output->proxy
+        );
+
+        if (output->lock_surface == NULL) {
+            // return exit_with_failure_and_message_and_cleanup_state("Received lock surface is NULL, exiting...\n", state);
+            return EXIT_FAILURE;
+        }
+
+        ext_session_lock_surface_v1_add_listener(
+                output->lock_surface,
+                &lock_surface_listener,
+                output
+        );
+    }
+
+    return EXIT_SUCCESS;
+}

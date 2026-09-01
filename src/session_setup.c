@@ -303,30 +303,9 @@ int setup_initial_state(struct anvi_state *state) {
 
     ext_session_lock_v1_add_listener(state->session_lock, &session_lock_listener, state);
 
-    for (struct anvi_output *output = state->outputs; output != NULL; output = output->next) {
-        output->surface = wl_compositor_create_surface(state->wl_compositor);
-
-        if (output->surface == NULL) {
-            return exit_with_failure_and_message_and_cleanup_state("Received output surface is NULL, exiting...\n", state);
-        }
-
-        output->lock_surface = ext_session_lock_v1_get_lock_surface(
-                state->session_lock,
-                output->surface,
-                output->proxy
-        );
-
-        if (output->lock_surface == NULL) {
-            return exit_with_failure_and_message_and_cleanup_state("Received lock surface is NULL, exiting...\n", state);
-        }
-
-        ext_session_lock_surface_v1_add_listener(
-                output->lock_surface,
-                &lock_surface_listener,
-                output
-        );
+    if (create_surfaces_for_outputs(state) == EXIT_FAILURE) {
+        return exit_with_failure_and_message_and_cleanup_state("Something went wrong with creating surfaces for outputs...\n", state);
     }
-
     return EXIT_SUCCESS;
 }
 
