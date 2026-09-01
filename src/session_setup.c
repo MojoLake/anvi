@@ -203,6 +203,16 @@ static void lock_surface_configure(
 
     uint32_t* pixels = (uint32_t *)&pool_data[offset];
     memset(pixels, 0, width * height * 4);
+    
+    for (uint32_t i = 0; i < height; ++i) {
+        for (uint32_t j = 0; j < width; ++j) {
+            if ((i + j / 16 * 16) % 32  < 16) {
+                pixels[i * width + j] = 0xFF666666;
+            } else {
+                pixels[i * width + j] = 0xFFEEEEEE;
+            }
+        }
+    }
 
     wl_shm_pool_destroy(pool);
     munmap(pool_data, buffer_size);

@@ -22,7 +22,6 @@ int exit_with_failure_and_message(char* msg) {
 
 int main(void) {
 
-
     struct coldwrite_state state = {0};
 
     if (setup_initial_state(&state) == EXIT_FAILURE) {
