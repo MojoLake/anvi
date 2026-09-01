@@ -18,29 +18,33 @@ void destroy_output_proxy(struct wl_output *output) {
     }
 }
 
+void destroy_anvi_output(struct anvi_output *output) {
+    if (output->buffer != NULL) {
+        wl_buffer_destroy(output->buffer);
+    }
+
+    if (output->lock_surface != NULL) {
+        ext_session_lock_surface_v1_destroy(output->lock_surface);
+    }
+
+    if (output->surface) {
+        wl_surface_destroy(output->surface);
+    }
+
+    if (output->proxy) {
+        destroy_output_proxy(output->proxy);
+    }
+
+    free(output);
+}
+
 void destroy_outputs(struct anvi_state *state) {
     struct anvi_output *current_output = state->outputs;
 
     while (current_output != NULL) {
         struct anvi_output *next_output = current_output->next;
 
-        if (current_output->buffer != NULL) {
-            wl_buffer_destroy(current_output->buffer);
-        }
-
-        if (current_output->lock_surface != NULL) {
-            ext_session_lock_surface_v1_destroy(current_output->lock_surface);
-        }
-
-        if (current_output->surface) {
-            wl_surface_destroy(current_output->surface);
-        }
-
-        if (current_output->proxy) {
-            destroy_output_proxy(current_output->proxy);
-        }
-
-        free(current_output);
+        destroy_anvi_output(current_output);
 
         current_output = next_output;
     }
