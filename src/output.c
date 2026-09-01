@@ -23,11 +23,22 @@ void destroy_outputs(struct anvi_state *state) {
     while (current_output != NULL) {
         struct anvi_output *next_output = current_output->next;
 
-        wl_buffer_destroy(current_output->buffer);
-        ext_session_lock_surface_v1_destroy(current_output->lock_surface);
-        wl_surface_destroy(current_output->surface);
+        if (current_output->buffer != NULL) {
+            wl_buffer_destroy(current_output->buffer);
+        }
 
-        destroy_output_proxy(current_output->proxy);
+        if (current_output->lock_surface != NULL) {
+            ext_session_lock_surface_v1_destroy(current_output->lock_surface);
+        }
+
+        if (current_output->surface) {
+            wl_surface_destroy(current_output->surface);
+        }
+
+        if (current_output->proxy) {
+            destroy_output_proxy(current_output->proxy);
+        }
+
         free(current_output);
 
         current_output = next_output;
