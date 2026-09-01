@@ -56,6 +56,7 @@ executable(
   'coldwrite',
   [
     'src/main.c',
+    'src/session_setup.c',
     'src/keyboard.c',
     session_lock_header,
     session_lock_code,
