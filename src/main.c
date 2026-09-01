@@ -1,5 +1,4 @@
-// #define _POSIX_C_SOURCE 200112L
-#define _GNU_SOURCE 200112L
+#define _GNU_SOURCE 200112L // Right now Linux only? (gnu only)
 
 #include <inttypes.h>
 #include <stdio.h>
@@ -91,7 +90,7 @@ static int allocate_shm_file(size_t size) {
     int fd = memfd_create("coldwrite-buffer", MFD_CLOEXEC);
 
     if (fd < 0) {
-        return -1; // Why -1 instead of (EXIT_FAILURE = 1)?
+        return -1;
     }
     int ret;
     do {
