@@ -2,6 +2,7 @@
 #define OUTPUT_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #include <wayland-client.h>
 
@@ -26,7 +27,6 @@ struct anvi_output {
 };
 
 void destroy_outputs(struct anvi_state *state);
-void destroy_output_proxy(struct wl_output *output);
 int create_and_bind_anvi_output(struct anvi_state* state, struct wl_registry *registry, uint32_t name, uint32_t bind_version);
 bool remove_anvi_output(struct anvi_state *state, uint32_t registry_name);
 

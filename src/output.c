@@ -6,7 +6,7 @@
 #include "app.h"
 #include "output.h"
 
-void destroy_output_proxy(struct wl_output *output) {
+static void destroy_output_proxy(struct wl_output *output) {
     if (output == NULL) {
         return;
     }
