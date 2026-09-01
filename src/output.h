@@ -30,4 +30,6 @@ void destroy_outputs(struct anvi_state *state);
 int create_and_bind_anvi_output(struct anvi_state* state, struct wl_registry *registry, uint32_t name, uint32_t bind_version);
 bool remove_anvi_output(struct anvi_state *state, uint32_t registry_name);
 
+extern const struct ext_session_lock_surface_v1_listener lock_surface_listener;
+
 #endif
