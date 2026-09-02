@@ -58,12 +58,12 @@ int draw_initial_lock_screen(struct anvi_state *state, struct anvi_output *outpu
     const uint32_t stride = width * 4;
     const uint32_t buffer_size = height * stride;
 
-
     int fd = allocate_shm_file(buffer_size);
     if (fd < 0) {
         fprintf(stderr, "Failed to allocate shm file\n");
         return EXIT_FAILURE;
     }
+
     uint8_t *pool_data = mmap(NULL, buffer_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
     if (pool_data == MAP_FAILED) {
