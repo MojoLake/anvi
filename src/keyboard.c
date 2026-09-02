@@ -1,5 +1,3 @@
-#include "keyboard.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -9,6 +7,9 @@
 #include <wayland-client.h>
 #include <xkbcommon/xkbcommon.h>
 #include <xkbcommon/xkbcommon-keysyms.h>
+
+#include "app.h"
+#include "keyboard.h"
 
 struct anvi_keyboard {
     struct wl_keyboard *proxy;
@@ -32,7 +33,8 @@ static void keymap(void *data,
         return;
     }
     
-    struct anvi_keyboard *keyboard = (struct anvi_keyboard *)data;
+    struct anvi_state *state = (struct anvi_state *)data;
+    struct anvi_keyboard *keyboard = state->keyboard;
 
     char* map_shm = mmap(NULL, size, PROT_READ, MAP_PRIVATE, fd, 0);
 
@@ -99,7 +101,8 @@ static void key(void *data,
 		    uint32_t key_state) {
     (void)wl_keyboard;
 
-    struct anvi_keyboard *keyboard = (struct anvi_keyboard *)data;
+    struct anvi_state *state = (struct anvi_state *)data;
+    struct anvi_keyboard *keyboard = state->keyboard;
 
     printf(
         "Key %" PRIu32 " with serial = %" PRIu32
@@ -123,13 +126,20 @@ static void key(void *data,
     xkb_keycode_t xkb_keycode = wayland_keycode + 8;
 
     // xkb_keysym_t keysym = xkb_state_key_get_one_sym(keyboard->xkb_state, xkb_keycode);
-    
+
     char text[64];
     int length = xkb_state_key_get_utf8(keyboard->xkb_state, xkb_keycode, text, sizeof(text));
+
+    for (int i = 0; i < length; ++i) {
+        printf("key: %c was pressed\n", text[i]);
+    }
 
     if (length > 0  && (size_t)length < sizeof(text)) {
         // A text-producing key was typed!
         keyboard->key_pressed = true;
+    }
+
+    for (int i = 0; i < length; ++i) {
     }
 }
 
@@ -141,7 +151,8 @@ static void modifiers(void *data,
 			  uint32_t mods_locked,
 			  uint32_t group) {
     (void)wl_keyboard;
-    struct anvi_keyboard *keyboard = (struct anvi_keyboard *)data;
+    struct anvi_state *state = (struct anvi_state *)data;
+    struct anvi_keyboard *keyboard = state->keyboard;
 
     printf(
         "Inside modifiers we have %" PRIu32 " %" PRIu32 " %" PRIu32
@@ -189,7 +200,7 @@ static void release_or_destroy_keyboard(struct wl_keyboard* keyboard) {
     }
 }
 
-struct anvi_keyboard *anvi_keyboard_create(struct wl_seat *seat) {
+struct anvi_keyboard *anvi_keyboard_create(struct anvi_state *state, struct wl_seat *seat) {
     struct anvi_keyboard *keyboard = calloc(1, sizeof(struct anvi_keyboard));
 
     if (keyboard == NULL) {
@@ -204,7 +215,8 @@ struct anvi_keyboard *anvi_keyboard_create(struct wl_seat *seat) {
         return NULL;
     }
 
-    if (wl_keyboard_add_listener(keyboard->proxy, &keyboard_listener, keyboard) < 0) {
+    // if (wl_keyboard_add_listener(keyboard->proxy, &keyboard_listener, keyboard) < 0) {
+    if (wl_keyboard_add_listener(keyboard->proxy, &keyboard_listener, state)) {
         fprintf(stderr, "Failed to add keyboard listener...\n");
         release_or_destroy_keyboard(keyboard->proxy);        
         free(keyboard);

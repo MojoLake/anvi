@@ -15,7 +15,7 @@ void seat_capabilities(void *data, struct wl_seat *seat, uint32_t capabilities) 
     if (capabilities & WL_SEAT_CAPABILITY_KEYBOARD) {
         printf("Seat has a keyboard\n");
         if (state->keyboard == NULL) {
-            state->keyboard = anvi_keyboard_create(seat);
+            state->keyboard = anvi_keyboard_create(state, seat);
 
             if (state->keyboard == NULL) {
                 state->initialization_failed = true;
