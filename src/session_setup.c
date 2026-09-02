@@ -6,6 +6,7 @@
 
 #include "app.h"
 #include "output.h"
+#include "buffer.h"
 
 void seat_capabilities(void *data, struct wl_seat *seat, uint32_t capabilities) {
 
@@ -167,21 +168,8 @@ static void registry_global(
     }
 
     if (strcmp(interface, wl_shm_interface.name) == 0) {
-        uint32_t client_version = wl_shm_interface.version;
-
-        if (client_version > bind_version) {
-            client_version = bind_version;
-        }
-
-        state->wl_shm = wl_registry_bind(
-            registry,
-            name,
-            &wl_shm_interface,
-            client_version
-        );
-
-        if (state->wl_shm == NULL) {
-            state->initialization_failed = true;
+        if (create_and_bind_wl_shm(state, registry, name, bind_version) == EXIT_FAILURE) {
+            fprintf(stderr, "Failed to create and bind wl_shm\n");
             return;
         }
     }
