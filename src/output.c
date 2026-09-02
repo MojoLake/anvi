@@ -1,34 +1,14 @@
-#define _GNU_SOURCE 200112L // Right now Linux only? (gnu only)
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/mman.h>
 #include <unistd.h>
-#include <errno.h>
 
 #include <wayland-client.h>
 
 #include "app.h"
 #include "output.h"
+#include "buffer.h"
 
-static int allocate_shm_file(size_t size) {
-    int fd = memfd_create("anvi-buffer", MFD_CLOEXEC);
-
-    if (fd < 0) {
-        return -1;
-    }
-    int ret;
-    do {
-        ret = ftruncate(fd, size);
-    } while (ret < 0 && errno == EINTR);
-
-    if (ret < 0) {
-        close(fd);
-        return -1;
-    }
-
-    return fd;
-}
 
 static void destroy_output_proxy(struct wl_output *output) {
     if (output == NULL) {
@@ -158,62 +138,11 @@ static void lock_surface_configure(
             serial
     );
 
+    if (draw_initial_lock_screen(state, output, width, height) == EXIT_FAILURE) {
+        return;
+    }
+
     printf("Lock surface configured: %" PRIu32 " x%" PRIu32 "\n", width, height);
-
-    const uint32_t stride = width * 4;
-    const uint32_t buffer_size = height * stride;
-
-
-    int fd = allocate_shm_file(buffer_size);
-    if (fd < 0) {
-        fprintf(stderr, "Failed to allocate shm file\n");
-        return;
-    }
-    uint8_t *pool_data = mmap(NULL, buffer_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-
-    if (pool_data == MAP_FAILED) {
-        fprintf(stderr, "Failed to mmap pool data\n");
-        return;
-    }
-
-    struct wl_shm_pool *pool = wl_shm_create_pool(state->wl_shm, fd, buffer_size);
-
-    if (pool == NULL) {
-        fprintf(stderr, "Failed to create wl_shm_pool\n");
-        return;
-    }
-
-    const int index = 0;
-    const int offset = height * stride * index;
-    struct wl_buffer *buffer = wl_shm_pool_create_buffer(pool, offset, width, height, stride, WL_SHM_FORMAT_XRGB8888);
-
-    if (buffer == NULL) {
-        fprintf(stderr, "Failed to create wl_buffer\n");
-        return;
-    }
-
-    output->buffer = buffer;
-
-    uint32_t* pixels = (uint32_t *)&pool_data[offset];
-    
-    for (uint32_t i = 0; i < height; ++i) {
-        for (uint32_t j = 0; j < width; ++j) {
-            if ((i + j / 16 * 16) % 32  < 16) {
-                pixels[i * width + j] = 0xFF666666;
-            } else {
-                pixels[i * width + j] = 0xFFEEEEEE;
-            }
-        }
-    }
-
-    wl_shm_pool_destroy(pool);
-    munmap(pool_data, buffer_size);
-    close(fd);
-
-
-    wl_surface_attach(output->surface, buffer, 0, 0);
-    wl_surface_damage(output->surface, 0, 0, INT32_MAX, INT32_MAX);
-    wl_surface_commit(output->surface);
 }
 
 const struct ext_session_lock_surface_v1_listener lock_surface_listener = {
