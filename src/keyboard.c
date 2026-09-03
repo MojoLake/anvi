@@ -207,14 +207,12 @@ static void modifiers(void *data,
     struct anvi_state *state = (struct anvi_state *)data;
     struct anvi_keyboard *keyboard = state->keyboard;
 
-
     if (keyboard->xkb_state == NULL) {
         fprintf(stderr, "Keyboard xkb_state is NULL...\n");
         return;
     }
 
     xkb_state_update_mask(keyboard->xkb_state, mods_depressed, mods_latched, mods_locked, 0, 0, group);
-
 }
 
 static void repeat_info(void *data, struct wl_keyboard *keyboard, int32_t rate, int32_t delay) {
