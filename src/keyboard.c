@@ -119,6 +119,45 @@ int handle_backspace(struct anvi_state *state) {
     return EXIT_SUCCESS;
 }
 
+bool check_and_handle_special_keys(struct anvi_state *state, xkb_keysym_t keysym) {
+
+    switch (keysym) {
+        case XKB_KEY_Left:
+            handle_left_arrow(state);
+            return true;
+        case XKB_KEY_Right:
+            handle_right_arrow(state);
+            return true;
+        case XKB_KEY_BackSpace:
+            handle_backspace(state);
+            return true;
+    }
+    return false;
+}
+
+void handle_potential_text_input(struct anvi_state *state, xkb_keycode_t xkb_keycode) {
+
+    struct anvi_keyboard *keyboard = state->keyboard;
+
+    char text[64];
+    const int length = xkb_state_key_get_utf8(keyboard->xkb_state, xkb_keycode, text, sizeof(text));
+
+    if (length > 0  && (size_t)length < sizeof(text)) {
+        // A was typed!
+        if (text[0] == 'a') {
+            keyboard->key_pressed = true;
+        }
+    }
+
+    for (int i = 0; i < length; ++i) {
+        const int buffer_ind = state->text_buffer_next_free;
+        if (buffer_ind < (int)sizeof(state->text_buffer)) {
+            state->text_buffer[buffer_ind] = text[i];
+            state->text_buffer_next_free = buffer_ind + 1;
+        }
+    }
+}
+
 static void key(void *data,
 		    struct wl_keyboard *wl_keyboard,
 		    uint32_t serial,
@@ -126,18 +165,11 @@ static void key(void *data,
 		    uint32_t wayland_keycode,
 		    uint32_t key_state) {
     (void)wl_keyboard;
+    (void)serial;
+    (void)time;
 
     struct anvi_state *state = (struct anvi_state *)data;
     struct anvi_keyboard *keyboard = state->keyboard;
-
-    printf(
-        "Key %" PRIu32 " with serial = %" PRIu32
-        " was pressed at time %" PRIu32 " with state %" PRIu32 "\n",
-        wayland_keycode,
-        serial,
-        time,
-        key_state
-    );
 
     if (keyboard->xkb_state == NULL) {
         fprintf(stderr, "No xkb_state found for keyboard...\n");
@@ -153,42 +185,14 @@ static void key(void *data,
 
     xkb_keysym_t keysym = xkb_state_key_get_one_sym(keyboard->xkb_state, xkb_keycode);
 
-    printf("keysym: %u\n", keysym);
+    bool special_key = check_and_handle_special_keys(state, keysym);
 
-
-    switch (keysym) {
-        case XKB_KEY_Left:
-            handle_left_arrow(state);
-            return;
-        case XKB_KEY_Right:
-            handle_right_arrow(state);
-            return;
-        case XKB_KEY_BackSpace:
-            handle_backspace(state);
-            return;
+    if (special_key) {
+        return;
     }
+    // Even thouh special_key = false here it might just be that we missed some special key. Just a fyi.
 
-    char text[64];
-    int length = xkb_state_key_get_utf8(keyboard->xkb_state, xkb_keycode, text, sizeof(text));
-
-    for (int i = 0; i < length; ++i) {
-        printf("key: %c was pressed\n", text[i]);
-    }
-
-    if (length > 0  && (size_t)length < sizeof(text)) {
-        // A text-producing key was typed!
-        if (text[0] == 'a') {
-            keyboard->key_pressed = true;
-        }
-    }
-
-    for (int i = 0; i < length; ++i) {
-        const int buffer_ind = state->text_buffer_next_free;
-        if (buffer_ind < (int)sizeof(state->text_buffer)) {
-            state->text_buffer[buffer_ind] = text[i];
-            state->text_buffer_next_free = buffer_ind + 1;
-        }
-    }
+    handle_potential_text_input(state, xkb_keycode);
 }
 
 static void modifiers(void *data,
@@ -199,18 +203,10 @@ static void modifiers(void *data,
 			  uint32_t mods_locked,
 			  uint32_t group) {
     (void)wl_keyboard;
+    (void)serial;
     struct anvi_state *state = (struct anvi_state *)data;
     struct anvi_keyboard *keyboard = state->keyboard;
 
-    printf(
-        "Inside modifiers we have %" PRIu32 " %" PRIu32 " %" PRIu32
-        " %" PRIu32 " %" PRIu32 "\n",
-        serial,
-        mods_depressed,
-        mods_latched,
-        mods_locked,
-        group
-    );
 
     if (keyboard->xkb_state == NULL) {
         fprintf(stderr, "Keyboard xkb_state is NULL...\n");
