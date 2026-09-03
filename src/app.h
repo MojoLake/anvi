@@ -8,7 +8,7 @@
 #include "keyboard.h"
 
 struct anvi_output;
-constexpr uint32_t TEXT_BUFFER_SIZE = 256;
+constexpr uint32_t TEXT_BUFFER_SIZE = 2048;
 
 struct anvi_state {
     struct ext_session_lock_manager_v1 *session_lock_manager;

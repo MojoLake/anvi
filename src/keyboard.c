@@ -4,9 +4,11 @@
 #include <inttypes.h>
 #include <sys/mman.h>
 
-#include <wayland-client.h>
 #include <xkbcommon/xkbcommon.h>
 #include <xkbcommon/xkbcommon-keysyms.h>
+#include <xkbcommon/xkbcommon-keysyms.h>
+
+#include <wayland-client.h>
 
 #include "app.h"
 #include "keyboard.h"
@@ -93,6 +95,30 @@ static void leave(void *data,
     printf("Serial: %" PRIu32 "\n", serial);
 }
 
+int handle_left_arrow(struct anvi_state *state) {
+    (void)state;
+    return EXIT_SUCCESS;
+}
+
+int handle_right_arrow(struct anvi_state *state) {
+    (void)state;
+    return EXIT_SUCCESS;
+}
+
+int handle_backspace(struct anvi_state *state) {
+
+    const uint32_t current_buffer_ind = state->text_buffer_next_free;
+    if (current_buffer_ind == 0 || current_buffer_ind > (uint32_t)sizeof(state->text_buffer)) {
+        return EXIT_FAILURE;
+    }
+
+    state->text_buffer_next_free = current_buffer_ind - 1;
+    // We don't even need to overwrite the current character at
+    // current_buffer_ind because our program assumes everything after
+    // state->text_buffer_next_free to be garbage.
+    return EXIT_SUCCESS;
+}
+
 static void key(void *data,
 		    struct wl_keyboard *wl_keyboard,
 		    uint32_t serial,
@@ -125,7 +151,22 @@ static void key(void *data,
 
     xkb_keycode_t xkb_keycode = wayland_keycode + 8;
 
-    // xkb_keysym_t keysym = xkb_state_key_get_one_sym(keyboard->xkb_state, xkb_keycode);
+    xkb_keysym_t keysym = xkb_state_key_get_one_sym(keyboard->xkb_state, xkb_keycode);
+
+    printf("keysym: %u\n", keysym);
+
+
+    switch (keysym) {
+        case XKB_KEY_Left:
+            handle_left_arrow(state);
+            return;
+        case XKB_KEY_Right:
+            handle_right_arrow(state);
+            return;
+        case XKB_KEY_BackSpace:
+            handle_backspace(state);
+            return;
+    }
 
     char text[64];
     int length = xkb_state_key_get_utf8(keyboard->xkb_state, xkb_keycode, text, sizeof(text));
@@ -136,10 +177,17 @@ static void key(void *data,
 
     if (length > 0  && (size_t)length < sizeof(text)) {
         // A text-producing key was typed!
-        keyboard->key_pressed = true;
+        if (text[0] == 'a') {
+            keyboard->key_pressed = true;
+        }
     }
 
     for (int i = 0; i < length; ++i) {
+        const int buffer_ind = state->text_buffer_next_free;
+        if (buffer_ind < (int)sizeof(state->text_buffer)) {
+            state->text_buffer[buffer_ind] = text[i];
+            state->text_buffer_next_free = buffer_ind + 1;
+        }
     }
 }
 
@@ -215,7 +263,6 @@ struct anvi_keyboard *anvi_keyboard_create(struct anvi_state *state, struct wl_s
         return NULL;
     }
 
-    // if (wl_keyboard_add_listener(keyboard->proxy, &keyboard_listener, keyboard) < 0) {
     if (wl_keyboard_add_listener(keyboard->proxy, &keyboard_listener, state)) {
         fprintf(stderr, "Failed to add keyboard listener...\n");
         release_or_destroy_keyboard(keyboard->proxy);        

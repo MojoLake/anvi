@@ -49,6 +49,11 @@ int main(void) {
 
             state.session_lock = NULL;
 
+            for (uint32_t i = 0; i < state.text_buffer_next_free; ++i) {
+                printf("%c", state.text_buffer[i]);
+            }
+            printf("\n");
+
             wl_display_roundtrip(state.display);
             break;
         }
