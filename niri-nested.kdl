@@ -1,4 +1,4 @@
-spawn-at-startup "ghostty" "--working-directory=inherit"
+spawn-at-startup "ghostty" "--gtk-single-instance=false" "--working-directory=inherit"
 
 hotkey-overlay {
   skip-at-startup
