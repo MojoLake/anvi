@@ -1,5 +1,10 @@
 spawn-at-startup "ghostty" "--gtk-single-instance=false" "--working-directory=inherit"
 
+window-rule {
+  match app-id=r#"^com\.mitchellh\.ghostty$"# at-startup=true
+  open-fullscreen true
+}
+
 hotkey-overlay {
   skip-at-startup
 }
