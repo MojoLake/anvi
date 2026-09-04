@@ -138,7 +138,7 @@ static void lock_surface_configure(
             serial
     );
 
-    if (draw_initial_lock_screen(state, output, width, height) == EXIT_FAILURE) {
+    if (setup_initial_lock_screen(state, output, width, height) == EXIT_FAILURE) {
         return;
     }
 

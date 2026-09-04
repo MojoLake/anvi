@@ -68,17 +68,56 @@ int setup_pool_data(struct anvi_output *output, size_t pool_size, int fd) {
     return EXIT_SUCCESS;
 }
 
-void draw_current_text(struct anvi_state *state, struct anvi_output *output) {
+void render_text_to_buffer(struct anvi_state *state, struct anvi_output *output) {
     cairo_set_source_rgb(output->cr, 1.0, 1.0, 1.0);
     cairo_move_to(output->cr, 50, 80);
     cairo_set_font_size(output->cr, 48);
     cairo_show_text(output->cr, state->text_buffer);
 
-    cairo_destroy(output->cr);
+    // cairo_destroy(output->cr); // TODO: perform this destroy when buffer is cleaned up
     cairo_surface_flush(output->cairo_surface);
 }
 
-int draw_initial_lock_screen(struct anvi_state *state, struct anvi_output *output, uint32_t width, uint32_t height) {
+void present_buffer(struct wl_surface *surface, struct wl_buffer *buffer) {
+    wl_surface_attach(surface, buffer, 0, 0);
+    wl_surface_damage(surface, 0, 0, INT32_MAX, INT32_MAX);
+    wl_surface_commit(surface);
+}
+
+void draw_screen(struct anvi_state *state, struct anvi_output *output) {
+    render_text_to_buffer(state, output);
+    present_buffer(output->surface, output->buffer);
+}
+
+int setup_buffer_and_cairo(struct anvi_output *output, struct wl_shm_pool *wl_shm_pool, uint32_t stride) {
+
+    const int index = 0; // just one buffer right now
+    const int offset = output->height * stride * index;
+    struct wl_buffer *buffer = wl_shm_pool_create_buffer(wl_shm_pool, offset, output->width, output->height, stride, WL_SHM_FORMAT_XRGB8888);
+
+    if (buffer == NULL) {
+        fprintf(stderr, "Failed to create wl_buffer\n");
+        return EXIT_FAILURE;
+    }
+
+    output->buffer = buffer;
+
+    unsigned char *buffer_data = output->pool_data + offset;
+    output->cairo_surface = cairo_image_surface_create_for_data(
+            buffer_data, CAIRO_FORMAT_RGB24, output->width, output->height, stride
+    );
+
+    if (cairo_surface_status(output->cairo_surface) != CAIRO_STATUS_SUCCESS) {
+        fprintf(stderr, "Cairo surface status is not success\n");
+        return EXIT_FAILURE;
+    }
+
+    output->cr = cairo_create(output->cairo_surface);
+
+    return EXIT_SUCCESS;
+}
+
+int setup_initial_lock_screen(struct anvi_state *state, struct anvi_output *output, uint32_t width, uint32_t height) {
 
     const uint32_t stride = width * 4;
     const size_t pool_size = height * stride;
@@ -101,36 +140,14 @@ int draw_initial_lock_screen(struct anvi_state *state, struct anvi_output *outpu
         return EXIT_FAILURE;
     }
 
-    const int index = 0; // just one buffer right now
-    const int offset = height * stride * index;
-    struct wl_buffer *buffer = wl_shm_pool_create_buffer(wl_shm_pool, offset, width, height, stride, WL_SHM_FORMAT_XRGB8888);
-
-    if (buffer == NULL) {
-        fprintf(stderr, "Failed to create wl_buffer\n");
+    if (setup_buffer_and_cairo(output, wl_shm_pool, stride) == EXIT_FAILURE) {
         return EXIT_FAILURE;
     }
-
-    output->buffer = buffer;
-
-    unsigned char *buffer_data = output->pool_data + offset;
-    output->cairo_surface = cairo_image_surface_create_for_data(
-            buffer_data, CAIRO_FORMAT_RGB24, width, height, stride
-    );
-
-    if (cairo_surface_status(output->cairo_surface) != CAIRO_STATUS_SUCCESS) {
-        fprintf(stderr, "Cairof surface status is not success\n");
-        return EXIT_FAILURE;
-    }
-
-    output->cr = cairo_create(output->cairo_surface);
 
     wl_shm_pool_destroy(wl_shm_pool);
 
-    draw_current_text(state, output);
-
-    wl_surface_attach(output->surface, buffer, 0, 0);
-    wl_surface_damage(output->surface, 0, 0, INT32_MAX, INT32_MAX);
-    wl_surface_commit(output->surface);
+    // Initial screen drawing.
+    draw_screen(state, output);
 
     return EXIT_SUCCESS;
 }

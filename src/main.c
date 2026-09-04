@@ -37,7 +37,8 @@ int main(void) {
         }
 
         for (struct anvi_output *output = state.outputs; output != NULL; output = output->next) {
-            draw_initial_lock_screen(&state, output, output->width, output->height);
+            // draw_initial_lock_screen(&state, output, output->width, output->height);
+            draw_screen(&state, output);
         }
 
         if (state.session_is_finished) {
