@@ -22,6 +22,7 @@
             wayland
             libxkbcommon
             wayland-protocols
+            cairo
           ];
         };
       };

@@ -10,6 +10,7 @@ project(
 )
 
 xkbcommon = dependency('xkbcommon')
+cairo = dependency('cairo')
 
 wayland_client = dependency('wayland-client', version: '>=1.20')
 wayland_protocols = dependency('wayland-protocols')
@@ -66,5 +67,6 @@ executable(
   dependencies: [
     wayland_client,
     xkbcommon,
+    cairo,
   ]
 )
