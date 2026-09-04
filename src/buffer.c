@@ -53,35 +53,57 @@ static int allocate_shm_file(size_t size) {
     return fd;
 }
 
-int draw_initial_lock_screen(struct anvi_state *state, struct anvi_output *output, uint32_t width, uint32_t height) {
+int setup_pool_data(struct anvi_output *output, size_t pool_size, int fd) {
 
-    const uint32_t stride = width * 4;
-    const uint32_t buffer_size = height * stride;
-
-    int fd = allocate_shm_file(buffer_size);
-    if (fd < 0) {
-        fprintf(stderr, "Failed to allocate shm file\n");
-        return EXIT_FAILURE;
-    }
-
-    uint8_t *pool_data = mmap(NULL, buffer_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    uint8_t *pool_data = mmap(NULL, pool_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
     if (pool_data == MAP_FAILED) {
         fprintf(stderr, "Failed to mmap pool data\n");
         return EXIT_FAILURE;
     }
 
-    struct wl_shm_pool *pool = wl_shm_create_pool(state->wl_shm, fd, buffer_size);
+    output->pool_data = pool_data;
+    output->pool_size = pool_size;
+    
+    return EXIT_SUCCESS;
+}
 
+void draw_current_text(struct anvi_state *state, struct anvi_output *output) {
+    cairo_set_source_rgb(output->cr, 1.0, 1.0, 1.0);
+    cairo_move_to(output->cr, 50, 80);
+    cairo_set_font_size(output->cr, 48);
+    cairo_show_text(output->cr, state->text_buffer);
 
-    if (pool == NULL) {
+    cairo_destroy(output->cr);
+    cairo_surface_flush(output->cairo_surface);
+}
+
+int draw_initial_lock_screen(struct anvi_state *state, struct anvi_output *output, uint32_t width, uint32_t height) {
+
+    const uint32_t stride = width * 4;
+    const size_t pool_size = height * stride;
+
+    int fd = allocate_shm_file(pool_size);
+    if (fd < 0) {
+        fprintf(stderr, "Failed to allocate shm file\n");
+        return EXIT_FAILURE;
+    }
+
+    if (setup_pool_data(output, pool_size, fd) == EXIT_FAILURE) {
+        return EXIT_FAILURE;
+    }
+
+    struct wl_shm_pool *wl_shm_pool = wl_shm_create_pool(state->wl_shm, fd, pool_size);
+    close(fd); // Not needed anymore.
+
+    if (wl_shm_pool == NULL) {
         fprintf(stderr, "Failed to create wl_shm_pool\n");
         return EXIT_FAILURE;
     }
 
-    const int index = 0;
+    const int index = 0; // just one buffer right now
     const int offset = height * stride * index;
-    struct wl_buffer *buffer = wl_shm_pool_create_buffer(pool, offset, width, height, stride, WL_SHM_FORMAT_XRGB8888);
+    struct wl_buffer *buffer = wl_shm_pool_create_buffer(wl_shm_pool, offset, width, height, stride, WL_SHM_FORMAT_XRGB8888);
 
     if (buffer == NULL) {
         fprintf(stderr, "Failed to create wl_buffer\n");
@@ -90,10 +112,10 @@ int draw_initial_lock_screen(struct anvi_state *state, struct anvi_output *outpu
 
     output->buffer = buffer;
 
-    unsigned char *buffer_data = pool_data + offset;
+    unsigned char *buffer_data = output->pool_data + offset;
     output->cairo_surface = cairo_image_surface_create_for_data(
             buffer_data, CAIRO_FORMAT_RGB24, width, height, stride
-            );
+    );
 
     if (cairo_surface_status(output->cairo_surface) != CAIRO_STATUS_SUCCESS) {
         fprintf(stderr, "Cairof surface status is not success\n");
@@ -102,30 +124,9 @@ int draw_initial_lock_screen(struct anvi_state *state, struct anvi_output *outpu
 
     output->cr = cairo_create(output->cairo_surface);
 
-    cairo_set_source_rgb(output->cr, 0.1, 0.1, 0.1);
-    cairo_paint(output->cr);
+    wl_shm_pool_destroy(wl_shm_pool);
 
-    cairo_set_source_rgb(output->cr, 1.0, 1.0, 1.0);
-    cairo_move_to(output->cr, 50, 80);
-    cairo_show_text(output->cr, state->text_buffer);
-
-    cairo_destroy(output->cr);
-    cairo_surface_flush(output->cairo_surface);
-    // uint32_t* pixels = (uint32_t *)&pool_data[offset];
-
-    // for (uint32_t i = 0; i < height; ++i) {
-    //     for (uint32_t j = 0; j < width; ++j) {
-    //         if ((i + j / 32 * 32) % 64  < 32) {
-    //             pixels[i * width + j] = 0xFF666666;
-    //         } else {
-    //             pixels[i * width + j] = 0xFFEEEEEE;
-    //         }
-    //     }
-    // }
-
-    wl_shm_pool_destroy(pool);
-    munmap(pool_data, buffer_size);
-    close(fd);
+    draw_current_text(state, output);
 
     wl_surface_attach(output->surface, buffer, 0, 0);
     wl_surface_damage(output->surface, 0, 0, INT32_MAX, INT32_MAX);

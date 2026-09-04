@@ -144,7 +144,7 @@ void handle_potential_text_input(struct anvi_state *state, xkb_keycode_t xkb_key
 
     if (length > 0  && (size_t)length < sizeof(text)) {
         // A was typed!
-        if (text[0] == 'a') {
+        if (text[0] == 'q') {
             keyboard->key_pressed = true;
         }
     }

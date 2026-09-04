@@ -21,6 +21,9 @@ struct anvi_output {
     struct ext_session_lock_surface_v1 *lock_surface; 
     struct wl_buffer *buffer;
 
+    unsigned char *pool_data;
+    size_t pool_size;
+
     cairo_surface_t *cairo_surface;
     cairo_t *cr;
 
