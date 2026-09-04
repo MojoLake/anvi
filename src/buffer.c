@@ -90,17 +90,38 @@ int draw_initial_lock_screen(struct anvi_state *state, struct anvi_output *outpu
 
     output->buffer = buffer;
 
-    uint32_t* pixels = (uint32_t *)&pool_data[offset];
+    unsigned char *buffer_data = pool_data + offset;
+    output->cairo_surface = cairo_image_surface_create_for_data(
+            buffer_data, CAIRO_FORMAT_RGB24, width, height, stride
+            );
 
-    for (uint32_t i = 0; i < height; ++i) {
-        for (uint32_t j = 0; j < width; ++j) {
-            if ((i + j / 32 * 32) % 64  < 32) {
-                pixels[i * width + j] = 0xFF666666;
-            } else {
-                pixels[i * width + j] = 0xFFEEEEEE;
-            }
-        }
+    if (cairo_surface_status(output->cairo_surface) != CAIRO_STATUS_SUCCESS) {
+        fprintf(stderr, "Cairof surface status is not success\n");
+        return EXIT_FAILURE;
     }
+
+    output->cr = cairo_create(output->cairo_surface);
+
+    cairo_set_source_rgb(output->cr, 0.1, 0.1, 0.1);
+    cairo_paint(output->cr);
+
+    cairo_set_source_rgb(output->cr, 1.0, 1.0, 1.0);
+    cairo_move_to(output->cr, 50, 80);
+    cairo_show_text(output->cr, state->text_buffer);
+
+    cairo_destroy(output->cr);
+    cairo_surface_flush(output->cairo_surface);
+    // uint32_t* pixels = (uint32_t *)&pool_data[offset];
+
+    // for (uint32_t i = 0; i < height; ++i) {
+    //     for (uint32_t j = 0; j < width; ++j) {
+    //         if ((i + j / 32 * 32) % 64  < 32) {
+    //             pixels[i * width + j] = 0xFF666666;
+    //         } else {
+    //             pixels[i * width + j] = 0xFFEEEEEE;
+    //         }
+    //     }
+    // }
 
     wl_shm_pool_destroy(pool);
     munmap(pool_data, buffer_size);

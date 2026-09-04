@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <cairo.h>
 #include <wayland-client.h>
 
 #include "ext-session-lock-v1-client-protocol.h"
@@ -19,6 +20,9 @@ struct anvi_output {
     struct wl_surface *surface;
     struct ext_session_lock_surface_v1 *lock_surface; 
     struct wl_buffer *buffer;
+
+    cairo_surface_t *cairo_surface;
+    cairo_t *cr;
 
     uint32_t width;
     uint32_t height;

@@ -10,6 +10,8 @@
 #include "ext-session-lock-v1-client-protocol.h"
 
 #include "app.h"
+#include "output.h"
+#include "buffer.h"
 #include "keyboard.h"
 #include "session_setup.h"
 
@@ -32,6 +34,10 @@ int main(void) {
         if (wl_display_dispatch(state.display) < 0) {
             fprintf(stderr, "Wayland event dispatch failed...\n");
             break;
+        }
+
+        for (struct anvi_output *output = state.outputs; output != NULL; output = output->next) {
+            draw_initial_lock_screen(&state, output, output->width, output->height);
         }
 
         if (state.session_is_finished) {
