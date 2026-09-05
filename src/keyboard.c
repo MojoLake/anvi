@@ -11,6 +11,7 @@
 #include <wayland-client.h>
 
 #include "app.h"
+#include "log.h"
 #include "keyboard.h"
 
 struct anvi_keyboard {
@@ -41,7 +42,7 @@ static void keymap(void *data,
     char* map_shm = mmap(NULL, size, PROT_READ, MAP_PRIVATE, fd, 0);
 
     if (map_shm == MAP_FAILED) {
-        fprintf(stderr, "Mmap failed!\n");
+        anvi_log_error("Mmap failed!");
         close(fd);
         return;
     }
@@ -52,14 +53,14 @@ static void keymap(void *data,
     close(fd);
 
     if (new_keymap == NULL) {
-        fprintf(stderr, "Failed to compile XKB keymap\n");
+        anvi_log_error("Failed to compile XKB keymap.");
         return;
     }
 
     struct xkb_state *new_state = xkb_state_new(new_keymap);
 
     if (new_state == NULL) {
-        fprintf(stderr, "Failed to create XKB state\n");
+        anvi_log_error("Failed to create XKB state.");
         xkb_keymap_unref(new_keymap);
         return;
     }
@@ -172,7 +173,7 @@ static void key(void *data,
     struct anvi_keyboard *keyboard = state->keyboard;
 
     if (keyboard->xkb_state == NULL) {
-        fprintf(stderr, "No xkb_state found for keyboard...\n");
+        anvi_log_error("No xkb_state found for keyboard...");
         return;
     }
 
@@ -208,7 +209,7 @@ static void modifiers(void *data,
     struct anvi_keyboard *keyboard = state->keyboard;
 
     if (keyboard->xkb_state == NULL) {
-        fprintf(stderr, "Keyboard xkb_state is NULL...\n");
+        anvi_log_error("Keyboard xkb_state is NULL...");
         return;
     }
 
@@ -218,7 +219,7 @@ static void modifiers(void *data,
 static void repeat_info(void *data, struct wl_keyboard *keyboard, int32_t rate, int32_t delay) {
     (void)data;
     (void)keyboard;
-    printf("Repeat rate: %" PRId32 ", delay: %" PRId32 "\n", rate, delay);
+    anvi_log_info("Repeat rate: %" PRId32 ", delay: %" PRId32 "\n", rate, delay);
 }
 
 static const struct wl_keyboard_listener keyboard_listener = {
