@@ -54,7 +54,7 @@ static int allocate_shm_file(size_t size) {
     return fd;
 }
 
-int setup_pool_data(struct anvi_output *output, size_t pool_size, int fd) {
+static int setup_pool_data(struct anvi_output *output, size_t pool_size, int fd) {
 
     uint8_t *pool_data = mmap(NULL, pool_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
@@ -69,7 +69,7 @@ int setup_pool_data(struct anvi_output *output, size_t pool_size, int fd) {
     return EXIT_SUCCESS;
 }
 
-void render_text_to_buffer(struct anvi_state *state, struct anvi_render_state *render_state) {
+static void render_text_to_buffer(struct anvi_state *state, struct anvi_render_state *render_state) {
     anvi_log_info("Rendering text to buffer...\n");
     cairo_set_source_rgb(render_state->cr, 1.0, 1.0, 1.0);
     cairo_move_to(render_state->cr, 50, 80);
@@ -80,7 +80,7 @@ void render_text_to_buffer(struct anvi_state *state, struct anvi_render_state *r
     cairo_surface_flush(render_state->cairo_surface);
 }
 
-void present_buffer(struct wl_surface *surface, struct wl_buffer *buffer_proxy) {
+static void present_buffer(struct wl_surface *surface, struct wl_buffer *buffer_proxy) {
     anvi_log_info("Presenting the buffer...\n");
     wl_surface_attach(surface, buffer_proxy, 0, 0);
     wl_surface_damage(surface, 0, 0, INT32_MAX, INT32_MAX);
@@ -92,16 +92,12 @@ void draw_screen(struct anvi_state *state, struct anvi_output *output) {
     present_buffer(output->surface, output->render_state->buffer->proxy);
 }
 
-int setup_buffer_and_cairo(struct anvi_output *output, struct wl_shm_pool *shm_pool, uint32_t stride) {
+static int setup_buffer_and_cairo(struct anvi_output *output, struct wl_shm_pool *shm_pool, uint32_t stride) {
 
     const int index = 0; // just one buffer right now
     const int offset = output->height * stride * index;
 
-    anvi_log_info("creating buffer from wl_shm_pool\n");
-
     struct wl_buffer *buffer_proxy = wl_shm_pool_create_buffer(shm_pool, offset, output->width, output->height, stride, WL_SHM_FORMAT_XRGB8888);
-
-    anvi_log_info("created buffer from wl_shm_pool\n");
 
     if (buffer_proxy == NULL) {
         anvi_log_error("Failed to create wl_buffer\n");
