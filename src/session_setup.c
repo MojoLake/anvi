@@ -170,7 +170,7 @@ static void registry_global(
 
     if (strcmp(interface, wl_shm_interface.name) == 0) {
         if (create_and_bind_wl_shm(state, registry, name, bind_version) == EXIT_FAILURE) {
-            fprintf(stderr, "Failed to create and bind wl_shm\n");
+            anvi_log_error("Failed to create and bind wl_shm.");
             return;
         }
     }
@@ -190,8 +190,6 @@ static void registry_global(
 
         wl_seat_add_listener(state->seat, &seat_listener, state);
     }
-
-    printf("global: name=%" PRIu32 ", interface=%s, version=%" PRIu32 "\n", name, interface, version);
 }
 
 static void registry_global_remove(
@@ -205,7 +203,7 @@ static void registry_global_remove(
 
     if (remove_anvi_output(state, name)) {
         // yay we removed it. What do we do with this information though? 
-        printf("global removed: name=%" PRIu32 "\n", name);
+        anvi_log_info("global removed: name=%" PRIu32 "\n", name);
     }
 
     // TODO: handle also other things than outputs.
