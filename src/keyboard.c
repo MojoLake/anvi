@@ -31,7 +31,7 @@ static void keymap(void *data,
     (void)wl_keyboard; // The argument is redundant since data also contains the wl_keyboard object.
     
     if (format != WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1) {
-        printf("Wrong wl keyboard keymap format, exiting keymap callback...\n");
+        anvi_log_error("Wrong wl keyboard keymap format, exiting keymap callback...");
         close(fd);
         return;
     }
@@ -71,7 +71,7 @@ static void keymap(void *data,
     keyboard->xkb_keymap = new_keymap;
     keyboard->xkb_state = new_state;
 
-    printf("Created new xkb_keymap and xkb_state!\n");
+    anvi_log_info("Created new xkb_keymap and xkb_state!\n");
 }
 
 static void enter(void *data,
@@ -83,7 +83,7 @@ static void enter(void *data,
     (void)keyboard;
     (void)surface;
     (void)keys;
-    printf("Serial: %" PRIu32 "\n", serial);
+    anvi_log_info("Serial: %" PRIu32 "\n", serial);
 }
 
 static void leave(void *data,
@@ -93,7 +93,7 @@ static void leave(void *data,
     (void)data;
     (void)keyboard;
     (void)surface;
-    printf("Serial: %" PRIu32 "\n", serial);
+    anvi_log_info("Serial: %" PRIu32 "\n", serial);
 }
 
 int handle_left_arrow(struct anvi_state *state) {
@@ -178,7 +178,7 @@ static void key(void *data,
     }
 
     if (key_state != WL_KEYBOARD_KEY_STATE_PRESSED) {
-        printf("Returning from key-callback since the key was not pressed...\n");
+        anvi_log_info("Returning from key-callback since the key was not pressed...\n");
         return;
     }
 
@@ -247,7 +247,7 @@ struct anvi_keyboard *anvi_keyboard_create(struct anvi_state *state, struct wl_s
     struct anvi_keyboard *keyboard = calloc(1, sizeof(struct anvi_keyboard));
 
     if (keyboard == NULL) {
-        fprintf(stderr, "Failed to allocate memory for keyboard struct...\n");
+        anvi_log_error("Failed to allocate memory for keyboard struct...");
         return NULL;
     }
 
@@ -259,7 +259,7 @@ struct anvi_keyboard *anvi_keyboard_create(struct anvi_state *state, struct wl_s
     }
 
     if (wl_keyboard_add_listener(keyboard->proxy, &keyboard_listener, state)) {
-        fprintf(stderr, "Failed to add keyboard listener...\n");
+        anvi_log_error("Failed to add keyboard listener...");
         release_or_destroy_keyboard(keyboard->proxy);        
         free(keyboard);
         return NULL;
