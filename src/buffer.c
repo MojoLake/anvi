@@ -63,21 +63,21 @@ int setup_pool_data(struct anvi_output *output, size_t pool_size, int fd) {
         return EXIT_FAILURE;
     }
 
-    output->pool_data = pool_data;
-    output->pool_size = pool_size;
+    output->render_state->pool_data = pool_data;
+    output->render_state->pool_size = pool_size;
     
     return EXIT_SUCCESS;
 }
 
-void render_text_to_buffer(struct anvi_state *state, struct anvi_output *output) {
+void render_text_to_buffer(struct anvi_state *state, struct anvi_render_state *render_state) {
     anvi_log_info("Rendering text to buffer...\n");
-    cairo_set_source_rgb(output->cr, 1.0, 1.0, 1.0);
-    cairo_move_to(output->cr, 50, 80);
-    cairo_set_font_size(output->cr, 48);
-    cairo_show_text(output->cr, state->text_buffer);
+    cairo_set_source_rgb(render_state->cr, 1.0, 1.0, 1.0);
+    cairo_move_to(render_state->cr, 50, 80);
+    cairo_set_font_size(render_state->cr, 48);
+    cairo_show_text(render_state->cr, state->text_buffer);
 
     // cairo_destroy(output->cr); // TODO: perform this destroy when buffer is cleaned up
-    cairo_surface_flush(output->cairo_surface);
+    cairo_surface_flush(render_state->cairo_surface);
 }
 
 void present_buffer(struct wl_surface *surface, struct wl_buffer *buffer_proxy) {
@@ -88,18 +88,18 @@ void present_buffer(struct wl_surface *surface, struct wl_buffer *buffer_proxy) 
 }
 
 void draw_screen(struct anvi_state *state, struct anvi_output *output) {
-    render_text_to_buffer(state, output);
-    present_buffer(output->surface, output->buffer->proxy);
+    render_text_to_buffer(state, output->render_state);
+    present_buffer(output->surface, output->render_state->buffer->proxy);
 }
 
-int setup_buffer_and_cairo(struct anvi_output *output, struct wl_shm_pool *wl_shm_pool, uint32_t stride) {
+int setup_buffer_and_cairo(struct anvi_output *output, struct wl_shm_pool *shm_pool, uint32_t stride) {
 
     const int index = 0; // just one buffer right now
     const int offset = output->height * stride * index;
 
     anvi_log_info("creating buffer from wl_shm_pool\n");
 
-    struct wl_buffer *buffer_proxy = wl_shm_pool_create_buffer(wl_shm_pool, offset, output->width, output->height, stride, WL_SHM_FORMAT_XRGB8888);
+    struct wl_buffer *buffer_proxy = wl_shm_pool_create_buffer(shm_pool, offset, output->width, output->height, stride, WL_SHM_FORMAT_XRGB8888);
 
     anvi_log_info("created buffer from wl_shm_pool\n");
 
@@ -108,33 +108,43 @@ int setup_buffer_and_cairo(struct anvi_output *output, struct wl_shm_pool *wl_sh
         return EXIT_FAILURE;
     }
 
-    output->buffer = calloc(1, sizeof(struct anvi_buffer));
+    output->render_state->buffer = calloc(1, sizeof(struct anvi_buffer));
 
-    output->buffer->proxy = buffer_proxy;
+    output->render_state->buffer->proxy = buffer_proxy;
 
-    unsigned char *buffer_data = output->pool_data + offset;
+    uint8_t *buffer_data = output->render_state->pool_data + offset;
 
-    output->cairo_surface = cairo_image_surface_create_for_data(
+    output->render_state->cairo_surface = cairo_image_surface_create_for_data(
             buffer_data, CAIRO_FORMAT_RGB24, output->width, output->height, stride
     );
 
     anvi_log_info("cairo_surface created!\n");
 
-    if (cairo_surface_status(output->cairo_surface) != CAIRO_STATUS_SUCCESS) {
+    if (cairo_surface_status(output->render_state->cairo_surface) != CAIRO_STATUS_SUCCESS) {
         anvi_log_error("Cairo surface status is not success\n");
         return EXIT_FAILURE;
     }
 
-    output->cr = cairo_create(output->cairo_surface);
+    output->render_state->cr = cairo_create(output->render_state->cairo_surface);
 
     return EXIT_SUCCESS;
 }
 
-// TODO: rename this to something more sensible.
-int setup_initial_lock_screen(struct anvi_state *state, struct anvi_output *output, uint32_t width, uint32_t height) {
+int setup_lock_screen(struct anvi_state *state, struct anvi_output *output) {
 
-    const uint32_t stride = width * 4;
-    const size_t pool_size = height * stride;
+    anvi_log_info("Application either started or output got resized so setting up lock screen for output.");
+
+    clean_up_render_state(output->render_state);
+
+    output->render_state = calloc(1, sizeof(struct anvi_render_state));
+
+    if (output->render_state == NULL) {
+        anvi_log_error("Failed to allocate render state.");
+        return EXIT_FAILURE;
+    }
+
+    const uint32_t stride = output->width * 4;
+    const size_t pool_size = output->height * stride;
 
     int fd = allocate_shm_file(pool_size);
     if (fd < 0) {
@@ -143,28 +153,32 @@ int setup_initial_lock_screen(struct anvi_state *state, struct anvi_output *outp
     }
 
     if (setup_pool_data(output, pool_size, fd) == EXIT_FAILURE) {
+        close(fd);
+        clean_up_render_state(output->render_state);
         return EXIT_FAILURE;
     }
 
     anvi_log_info("Pool data was setup successfully!\n");
 
-    struct wl_shm_pool *wl_shm_pool = wl_shm_create_pool(state->wl_shm, fd, pool_size);
+    struct wl_shm_pool *shm_pool = wl_shm_create_pool(state->wl_shm, fd, pool_size);
     close(fd); // Not needed anymore.
 
-    if (wl_shm_pool == NULL) {
+    if (shm_pool == NULL) {
         anvi_log_error("Failed to create wl_shm_pool\n");
+        clean_up_render_state(output->render_state);
         return EXIT_FAILURE;
     }
 
     anvi_log_info("wl_shm_pool was created successfully!\n");
 
-    if (setup_buffer_and_cairo(output, wl_shm_pool, stride) == EXIT_FAILURE) {
+    if (setup_buffer_and_cairo(output, shm_pool, stride) == EXIT_FAILURE) {
+        clean_up_render_state(output->render_state);
         return EXIT_FAILURE;
     }
 
     anvi_log_info("buffer and cairo were setup successfully!\n");
 
-    wl_shm_pool_destroy(wl_shm_pool);
+    wl_shm_pool_destroy(shm_pool);
 
     // Initial screen drawing.
     draw_screen(state, output);

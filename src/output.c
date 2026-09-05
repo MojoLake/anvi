@@ -6,6 +6,7 @@
 #include <wayland-client.h>
 
 #include "app.h"
+#include "log.h"
 #include "output.h"
 #include "buffer.h"
 
@@ -22,9 +23,46 @@ static void destroy_output_proxy(struct wl_output *output) {
     }
 }
 
+void clean_up_render_state(struct anvi_render_state *render_state) {
+
+    anvi_log_info("Cleaning up render state");
+
+    if (render_state == NULL) {
+        anvi_log_info("Render state is NULL so nothing to clean up.");
+        return;
+    }
+
+    if (render_state->cr != NULL) {
+        cairo_destroy(render_state->cr);
+        render_state->cr = NULL;
+    }
+
+    if (render_state->cairo_surface != NULL) {
+        cairo_surface_destroy(render_state->cairo_surface);
+        render_state->cairo_surface = NULL;
+    }
+
+    if (render_state->buffer != NULL) {
+
+        if (render_state->buffer->proxy != NULL) {
+            wl_buffer_destroy(render_state->buffer->proxy);
+        }
+
+        free(render_state->buffer);
+        render_state->buffer = NULL;
+    }
+
+    if (render_state->pool_data != NULL) {
+        munmap(render_state->pool_data, render_state->pool_size);
+        render_state->pool_data = NULL;
+    }
+
+    free(render_state);
+}
+
 void destroy_anvi_output(struct anvi_output *output) {
-    if (output->buffer != NULL) {
-        wl_buffer_destroy(output->buffer->proxy);
+    if (output->render_state != NULL) {
+        clean_up_render_state(output->render_state);
     }
 
     if (output->lock_surface != NULL) {
@@ -108,7 +146,7 @@ int create_and_bind_anvi_output(struct anvi_state* state, struct wl_registry *re
     );
 
     if (new_output->proxy == NULL) {
-        fprintf(stderr, "Binding wl_output returned NULL\n");
+        anvi_log_error("Binding wl_output returned NULL\n");
         state->initialization_failed = true;
         free(new_output);
         return EXIT_FAILURE;
@@ -138,15 +176,11 @@ static void lock_surface_configure(
             serial
     );
 
-    fprintf(stderr, "Heere we are!\n");
-
-    if (setup_initial_lock_screen(state, output, width, height) == EXIT_FAILURE) {
+    if (setup_lock_screen(state, output) == EXIT_FAILURE) {
         return;
     }
 
-    fprintf(stderr, "here we are after setup_initial_lock_screen\n");
-
-    printf("Lock surface configured: %" PRIu32 " x%" PRIu32 "\n", width, height);
+    // What should we do there here?
 }
 
 const struct ext_session_lock_surface_v1_listener lock_surface_listener = {

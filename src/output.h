@@ -12,6 +12,16 @@
 struct anvi_state;
 struct anvi_buffer;
 
+struct anvi_render_state {
+    uint8_t *pool_data;
+    size_t pool_size;
+
+    struct anvi_buffer *buffer; // at some point two of these
+
+    cairo_surface_t *cairo_surface;
+    cairo_t *cr;
+};
+
 struct anvi_output {
     struct anvi_state *state;
 
@@ -20,14 +30,8 @@ struct anvi_output {
 
     struct wl_surface *surface;
     struct ext_session_lock_surface_v1 *lock_surface; 
-    // struct wl_buffer *buffer;
-    struct anvi_buffer *buffer;
 
-    unsigned char *pool_data;
-    size_t pool_size;
-
-    cairo_surface_t *cairo_surface;
-    cairo_t *cr;
+    struct anvi_render_state *render_state;
 
     uint32_t width;
     uint32_t height;
@@ -39,6 +43,7 @@ void destroy_outputs(struct anvi_state *state);
 int create_and_bind_anvi_output(struct anvi_state* state, struct wl_registry *registry, uint32_t name, uint32_t bind_version);
 bool remove_anvi_output(struct anvi_state *state, uint32_t registry_name);
 int create_surfaces_for_outputs(struct anvi_state *state);
+void clean_up_render_state(struct anvi_render_state *render_state);
 
 extern const struct ext_session_lock_surface_v1_listener lock_surface_listener;
 
