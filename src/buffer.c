@@ -174,6 +174,7 @@ int setup_lock_screen(struct anvi_state *state, struct anvi_output *output) {
 
     if (setup_buffer_and_cairo(output, shm_pool, stride) == EXIT_FAILURE) {
         clean_up_render_state(output->render_state);
+        wl_shm_pool_destroy(shm_pool);
         return EXIT_FAILURE;
     }
 
