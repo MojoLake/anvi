@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 #include "app.h"
+#include "log.h"
 #include "output.h"
 #include "buffer.h"
 
@@ -216,7 +217,7 @@ static const struct wl_registry_listener registry_listener = {
 };
 
 static int exit_with_failure_and_message(char* msg) {
-    fprintf(stderr, "%s", msg);
+    anvi_log_error(msg);
     return EXIT_FAILURE;
 }
 
