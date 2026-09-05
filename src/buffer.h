@@ -10,7 +10,7 @@ struct anvi_state;
 struct anvi_output;
 
 struct anvi_buffer {
-    struct wl_buffer *buffer;
+    struct wl_buffer *proxy;
     unsigned char *data;
     bool busy;
 };

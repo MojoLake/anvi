@@ -10,6 +10,7 @@
 #include "ext-session-lock-v1-client-protocol.h"
 
 #include "app.h"
+#include "log.h"
 #include "output.h"
 #include "buffer.h"
 #include "keyboard.h"
@@ -30,6 +31,8 @@ int main(void) {
         return EXIT_FAILURE;
     }
 
+    anvi_log_info("Initial state setup successfully.\n");
+
     while (true) {
         if (wl_display_dispatch(state.display) < 0) {
             fprintf(stderr, "Wayland event dispatch failed...\n");
@@ -37,7 +40,6 @@ int main(void) {
         }
 
         for (struct anvi_output *output = state.outputs; output != NULL; output = output->next) {
-            // draw_initial_lock_screen(&state, output, output->width, output->height);
             draw_screen(&state, output);
         }
 
@@ -56,24 +58,11 @@ int main(void) {
 
             state.session_lock = NULL;
 
-            for (uint32_t i = 0; i < state.text_buffer_next_free; ++i) {
-                printf("%c", state.text_buffer[i]);
-            }
-            printf("\n");
-
             wl_display_roundtrip(state.display);
             break;
         }
     }
 
-
-    printf(
-        "Built with support for %s version %d\n",
-        ext_session_lock_manager_v1_interface.name,
-        ext_session_lock_manager_v1_interface.version
-    );
-
     destroy_anvi_state(&state);
-
 	return EXIT_SUCCESS;
 }

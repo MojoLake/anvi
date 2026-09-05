@@ -24,7 +24,7 @@ static void destroy_output_proxy(struct wl_output *output) {
 
 void destroy_anvi_output(struct anvi_output *output) {
     if (output->buffer != NULL) {
-        wl_buffer_destroy(output->buffer);
+        wl_buffer_destroy(output->buffer->proxy);
     }
 
     if (output->lock_surface != NULL) {
@@ -138,9 +138,13 @@ static void lock_surface_configure(
             serial
     );
 
+    fprintf(stderr, "Heere we are!\n");
+
     if (setup_initial_lock_screen(state, output, width, height) == EXIT_FAILURE) {
         return;
     }
+
+    fprintf(stderr, "here we are after setup_initial_lock_screen\n");
 
     printf("Lock surface configured: %" PRIu32 " x%" PRIu32 "\n", width, height);
 }

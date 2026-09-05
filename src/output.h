@@ -10,6 +10,7 @@
 #include "ext-session-lock-v1-client-protocol.h"
 
 struct anvi_state;
+struct anvi_buffer;
 
 struct anvi_output {
     struct anvi_state *state;
@@ -19,7 +20,8 @@ struct anvi_output {
 
     struct wl_surface *surface;
     struct ext_session_lock_surface_v1 *lock_surface; 
-    struct wl_buffer *buffer;
+    // struct wl_buffer *buffer;
+    struct anvi_buffer *buffer;
 
     unsigned char *pool_data;
     size_t pool_size;

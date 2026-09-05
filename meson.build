@@ -61,6 +61,7 @@ executable(
     'src/keyboard.c',
     'src/output.c',
     'src/buffer.c',
+    'src/log.c',
     session_lock_header,
     session_lock_code,
   ],
