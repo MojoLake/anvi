@@ -61,6 +61,7 @@ void clean_up_render_state(struct anvi_render_state *render_state) {
 }
 
 void destroy_anvi_output(struct anvi_output *output) {
+
     if (output->render_state != NULL) {
         clean_up_render_state(output->render_state);
     }
@@ -130,7 +131,7 @@ int create_and_bind_anvi_output(struct anvi_state* state, struct wl_registry *re
     struct anvi_output *new_output = calloc(1, sizeof(struct anvi_output));
 
     if (new_output == NULL) {
-        fprintf(stderr, "Failed to allocate memory for a new output\n");
+        anvi_log_error("Failed to allocate memory for a new output.");
         state->initialization_failed = true;
         return EXIT_FAILURE;
     }
@@ -194,7 +195,6 @@ int create_surfaces_for_outputs(struct anvi_state *state) {
         output->surface = wl_compositor_create_surface(state->wl_compositor);
 
         if (output->surface == NULL) {
-            // return exit_with_failure_and_message_and_cleanup_state("Received output surface is NULL, exiting...\n", state);
             return EXIT_FAILURE;
         }
 
@@ -205,7 +205,7 @@ int create_surfaces_for_outputs(struct anvi_state *state) {
         );
 
         if (output->lock_surface == NULL) {
-            // return exit_with_failure_and_message_and_cleanup_state("Received lock surface is NULL, exiting...\n", state);
+            // Should we perform some cleanup here?
             return EXIT_FAILURE;
         }
 
