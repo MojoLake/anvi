@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <stdio.h>
 #include <sys/mman.h>
 #include <unistd.h>
 
@@ -209,7 +208,7 @@ int create_surfaces_for_outputs(struct anvi_state *state) {
         );
 
         if (output->lock_surface == NULL) {
-            // Should we perform some cleanup here?
+            wl_surface_destroy(output->surface);
             return EXIT_FAILURE;
         }
 
