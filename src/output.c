@@ -62,6 +62,10 @@ void clean_up_render_state(struct anvi_render_state *render_state) {
 
 void destroy_anvi_output(struct anvi_output *output) {
 
+    if (output == NULL) {
+        return;
+    }
+
     if (output->render_state != NULL) {
         clean_up_render_state(output->render_state);
     }
