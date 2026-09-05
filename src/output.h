@@ -16,10 +16,7 @@ struct anvi_render_state {
     uint8_t *pool_data;
     size_t pool_size;
 
-    struct anvi_buffer *buffer; // at some point two of these
-
-    cairo_surface_t *cairo_surface;
-    cairo_t *cr;
+    struct anvi_buffer *buffers[2];
 };
 
 struct anvi_output {

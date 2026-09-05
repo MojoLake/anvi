@@ -191,7 +191,7 @@ static void key(void *data,
     if (special_key) {
         return;
     }
-    // Even thouh special_key = false here it might just be that we missed some special key. Just a fyi.
+    // Even thouh special_key == false here it might just be that we missed some special key in our `check_and_handle_special_keys` -function. Just a fyi.
 
     handle_potential_text_input(state, xkb_keycode);
 }

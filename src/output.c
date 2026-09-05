@@ -22,6 +22,22 @@ static void destroy_output_proxy(struct wl_output *output) {
     }
 }
 
+void clean_up_anvi_buffer(struct anvi_buffer *buffer) {
+
+    if (buffer->proxy != NULL) {
+        wl_buffer_destroy(buffer->proxy);
+        buffer->proxy = NULL;
+    }
+
+    if (buffer->cairo_surface != NULL) {
+        cairo_surface_destroy(buffer->cairo_surface);
+        buffer->cairo_surface = NULL;
+    }
+
+    free(buffer);
+    buffer = NULL;
+}
+
 void clean_up_render_state(struct anvi_render_state *render_state) {
 
     anvi_log_info("Cleaning up render state");
@@ -31,24 +47,10 @@ void clean_up_render_state(struct anvi_render_state *render_state) {
         return;
     }
 
-    if (render_state->cr != NULL) {
-        cairo_destroy(render_state->cr);
-        render_state->cr = NULL;
-    }
-
-    if (render_state->cairo_surface != NULL) {
-        cairo_surface_destroy(render_state->cairo_surface);
-        render_state->cairo_surface = NULL;
-    }
-
-    if (render_state->buffer != NULL) {
-
-        if (render_state->buffer->proxy != NULL) {
-            wl_buffer_destroy(render_state->buffer->proxy);
+    for (size_t i = 0; i < 2; ++i) {
+        if (render_state->buffers[i] != NULL) {
+            clean_up_anvi_buffer(render_state->buffers[i]);
         }
-
-        free(render_state->buffer);
-        render_state->buffer = NULL;
     }
 
     if (render_state->pool_data != NULL) {

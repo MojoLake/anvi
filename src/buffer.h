@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <cairo.h>
 #include <wayland-client.h>
 
 struct anvi_state;
@@ -12,6 +13,7 @@ struct anvi_output;
 struct anvi_buffer {
     struct wl_buffer *proxy;
     uint8_t *data;
+    cairo_surface_t *cairo_surface;
     bool busy;
 };
 
