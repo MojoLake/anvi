@@ -106,6 +106,11 @@ static int setup_buffer_and_cairo(struct anvi_output *output, struct wl_shm_pool
 
     output->render_state->buffer = calloc(1, sizeof(struct anvi_buffer));
 
+    if (output->render_state->buffer == NULL) {
+        anvi_log_error("Failed to allocate buffer for render state.");
+        return EXIT_FAILURE;
+    }
+
     output->render_state->buffer->proxy = buffer_proxy;
 
     uint8_t *buffer_data = output->render_state->pool_data + offset;
