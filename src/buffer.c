@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/mman.h>
+#include <assert.h>
 
 #include <wayland-client.h>
 
@@ -12,6 +13,19 @@
 #include "log.h"
 #include "buffer.h"
 #include "output.h"
+
+
+static void
+buffer_release(void *data, struct wl_buffer *wl_buffer) {
+    (void)wl_buffer;
+    anvi_log_info("Buffer is being released.");
+    struct anvi_buffer *buffer = data;
+    buffer->busy = false;
+}
+
+static const struct wl_buffer_listener buffer_listener = {
+    .release = buffer_release,
+};
 
 int create_and_bind_wl_shm(struct anvi_state* state, struct wl_registry *registry, uint32_t name, uint32_t bind_version) {
     
@@ -81,19 +95,48 @@ static void render_text_to_buffer(struct anvi_state *state, struct anvi_buffer *
     cairo_surface_flush(buffer->cairo_surface);
 }
 
-static void present_buffer(struct wl_surface *surface, struct wl_buffer *buffer_proxy) {
+static void present_buffer(struct anvi_output *output, struct wl_buffer *buffer_proxy) {
     anvi_log_info("Presenting the buffer...\n");
-    wl_surface_attach(surface, buffer_proxy, 0, 0);
-    wl_surface_damage(surface, 0, 0, INT32_MAX, INT32_MAX);
-    wl_surface_commit(surface);
+    wl_surface_attach(output->surface, buffer_proxy, 0, 0);
+    wl_surface_damage(output->surface, 0, 0, output->width, output->height);
+    wl_surface_commit(output->surface);
 }
 
 void draw_screen(struct anvi_state *state, struct anvi_output *output) {
-    render_text_to_buffer(state, output->render_state->buffers[0]);
-    present_buffer(output->surface, output->render_state->buffers[0]->proxy);
+    // First we must find a non-busy buffer:
+    anvi_log_info("Start of draw_screen -function.");
+    anvi_log_info("buffer 0 and 1 busyness states: %d, %d", output->render_state->buffers[0]->busy, output->render_state->buffers[1]->busy);
+    struct anvi_buffer *free_buffer = NULL;
+    for (size_t i = 0; i < 2; ++i) {
+        anvi_log_info("in draw_screen i = %d", i);
+        assert(output->render_state->buffers[i] != NULL);
+        if (!output->render_state->buffers[i]->busy) {
+            anvi_log_info("Buffer %d is not busy, drawing to it.", i);
+            free_buffer = output->render_state->buffers[i];
+            free_buffer->busy = true;
+            break;
+        }
+    }
+    if (free_buffer == NULL) {
+        anvi_log_error("Could not find a free buffer to draw to...");
+        return;
+    }
+    render_text_to_buffer(state, free_buffer);
+    present_buffer(output, free_buffer->proxy);
 }
 
-static int setup_buffer_and_cairo(struct anvi_output *output, struct wl_shm_pool *shm_pool, struct anvi_buffer *buffer, const size_t stride, const size_t index) {
+static int setup_buffer_and_cairo(struct anvi_output *output, struct wl_shm_pool *shm_pool, const size_t stride, const size_t index) {
+
+    output->render_state->buffers[index] = malloc(sizeof(struct anvi_buffer)); 
+
+    if (output->render_state->buffers[index] == NULL) {
+        anvi_log_error("Failed to allocate buffer.");
+        return EXIT_FAILURE;
+    }
+
+    struct anvi_buffer *buffer = output->render_state->buffers[index];
+
+    buffer->busy = false;
 
     const size_t offset = output->height * stride * index;
 
@@ -101,6 +144,11 @@ static int setup_buffer_and_cairo(struct anvi_output *output, struct wl_shm_pool
 
     if (buffer_proxy == NULL) {
         anvi_log_error("Failed to create wl_buffer\n");
+        return EXIT_FAILURE;
+    }
+
+    if (wl_buffer_add_listener(buffer_proxy, &buffer_listener, buffer) == EXIT_FAILURE) {
+        anvi_log_error("Failed to add buffer listener.");
         return EXIT_FAILURE;
     }
 
@@ -125,14 +173,8 @@ static int setup_buffer_and_cairo(struct anvi_output *output, struct wl_shm_pool
 static int setup_two_buffers(struct anvi_output *output, struct wl_shm_pool *shm_pool, uint32_t stride) {
 
     for (size_t i = 0; i < 2; ++i) {
-        output->render_state->buffers[i] = malloc(sizeof(struct anvi_buffer)); 
 
-        if (output->render_state->buffers[i] == NULL) {
-            anvi_log_error("Failed to allocate buffer.");
-            return EXIT_FAILURE;
-        }
-
-        if (setup_buffer_and_cairo(output, shm_pool, output->render_state->buffers[i], stride, i) == EXIT_FAILURE) {
+        if (setup_buffer_and_cairo(output, shm_pool, stride, i) == EXIT_FAILURE) {
             return EXIT_FAILURE;
         }
     }
