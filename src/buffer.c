@@ -87,9 +87,9 @@ static int setup_pool_data(struct anvi_output *output, size_t pool_size, int fd)
 static void
 render_text_to_buffer(struct anvi_state *state, struct anvi_buffer *buffer) {
 
-    anvi_log_info("calling memset with size = %zu", buffer->size);
+    // Clear the buffer.
     memset(buffer->data, 0, buffer->size);
-    anvi_log_info("after memset");
+
     cairo_t *cr = cairo_create(buffer->cairo_surface);
 
     anvi_log_info("Rendering text to buffer...\n");
