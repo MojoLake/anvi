@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <sys/mman.h>
 #include <assert.h>
+#include <memory.h>
 
 #include <wayland-client.h>
 
@@ -83,15 +84,21 @@ static int setup_pool_data(struct anvi_output *output, size_t pool_size, int fd)
     return EXIT_SUCCESS;
 }
 
-static void render_text_to_buffer(struct anvi_state *state, struct anvi_buffer *buffer) {
+static void
+render_text_to_buffer(struct anvi_state *state, struct anvi_buffer *buffer) {
+
+    anvi_log_info("calling memset with size = %zu", buffer->size);
+    memset(buffer->data, 0, buffer->size);
+    anvi_log_info("after memset");
     cairo_t *cr = cairo_create(buffer->cairo_surface);
+
     anvi_log_info("Rendering text to buffer...\n");
     cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
     cairo_move_to(cr, 50, 80);
     cairo_set_font_size(cr, 48);
     cairo_show_text(cr, state->text_buffer);
 
-    // cairo_destroy(output->cr); // TODO: perform this destroy when buffer is cleaned up
+    cairo_destroy(cr);
     cairo_surface_flush(buffer->cairo_surface);
 }
 
@@ -102,25 +109,30 @@ static void present_buffer(struct anvi_output *output, struct wl_buffer *buffer_
     wl_surface_commit(output->surface);
 }
 
-void draw_screen(struct anvi_state *state, struct anvi_output *output) {
-    // First we must find a non-busy buffer:
-    anvi_log_info("Start of draw_screen -function.");
-    anvi_log_info("buffer 0 and 1 busyness states: %d, %d", output->render_state->buffers[0]->busy, output->render_state->buffers[1]->busy);
-    struct anvi_buffer *free_buffer = NULL;
+/*
+ * Returns a non-busy buffer or NULL if not found.
+ */
+static struct anvi_buffer *
+find_free_buffer(struct anvi_output *output) {
+    
     for (size_t i = 0; i < 2; ++i) {
-        anvi_log_info("in draw_screen i = %d", i);
         assert(output->render_state->buffers[i] != NULL);
         if (!output->render_state->buffers[i]->busy) {
-            anvi_log_info("Buffer %d is not busy, drawing to it.", i);
-            free_buffer = output->render_state->buffers[i];
-            free_buffer->busy = true;
-            break;
+            anvi_log_info("Buffer %d is not busy, ", i);
+            return output->render_state->buffers[i];
         }
     }
+    return NULL;
+}
+
+void draw_screen(struct anvi_state *state, struct anvi_output *output) {
+    // First we must find a non-busy buffer:
+    struct anvi_buffer *free_buffer = find_free_buffer(output);
     if (free_buffer == NULL) {
         anvi_log_error("Could not find a free buffer to draw to...");
         return;
     }
+    free_buffer->busy = true;
     render_text_to_buffer(state, free_buffer);
     present_buffer(output, free_buffer->proxy);
 }
@@ -135,10 +147,10 @@ static int setup_buffer_and_cairo(struct anvi_output *output, struct wl_shm_pool
     }
 
     struct anvi_buffer *buffer = output->render_state->buffers[index];
-
     buffer->busy = false;
+    buffer->size = output->height * stride;
 
-    const size_t offset = output->height * stride * index;
+    const size_t offset = buffer->size * index;
 
     struct wl_buffer *buffer_proxy = wl_shm_pool_create_buffer(shm_pool, offset, output->width, output->height, stride, WL_SHM_FORMAT_XRGB8888);
 
@@ -155,6 +167,8 @@ static int setup_buffer_and_cairo(struct anvi_output *output, struct wl_shm_pool
     buffer->proxy = buffer_proxy;
 
     uint8_t *buffer_data = output->render_state->pool_data + offset;
+
+    buffer->data = buffer_data;
 
     buffer->cairo_surface = cairo_image_surface_create_for_data(
             buffer_data, CAIRO_FORMAT_RGB24, output->width, output->height, stride

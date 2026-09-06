@@ -14,6 +14,7 @@ struct anvi_buffer {
     struct wl_buffer *proxy;
     uint8_t *data;
     cairo_surface_t *cairo_surface;
+    size_t size;
     bool busy;
 };
 

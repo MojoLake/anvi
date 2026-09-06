@@ -113,10 +113,8 @@ int handle_backspace(struct anvi_state *state) {
         return EXIT_FAILURE;
     }
 
+    state->text_buffer[current_buffer_ind - 1] = '\0';
     state->text_buffer_next_free = current_buffer_ind - 1;
-    // We don't even need to overwrite the current character at
-    // current_buffer_ind because our program assumes everything after
-    // state->text_buffer_next_free to be garbage.
     return EXIT_SUCCESS;
 }
 
