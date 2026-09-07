@@ -200,19 +200,60 @@ setup_two_buffers(struct anvi_output *output, struct wl_shm_pool *shm_pool, uint
     return EXIT_SUCCESS;
 }
 
+static void
+clean_up_anvi_buffer(struct anvi_buffer *buffer) {
+
+    if (buffer->proxy != NULL) {
+        wl_buffer_destroy(buffer->proxy);
+        buffer->proxy = NULL;
+    }
+
+    if (buffer->cairo_surface != NULL) {
+        cairo_surface_destroy(buffer->cairo_surface);
+        buffer->cairo_surface = NULL;
+    }
+
+    free(buffer);
+    buffer = NULL;
+}
+
+void
+clean_up_render_state(struct anvi_render_state *render_state) {
+
+    anvi_log_info("Cleaning up render state");
+
+    if (render_state == NULL) {
+        anvi_log_info("Render state is NULL so nothing to clean up.");
+        return;
+    }
+
+    for (size_t i = 0; i < 2; ++i) {
+        if (render_state->buffers[i] != NULL) {
+            clean_up_anvi_buffer(render_state->buffers[i]);
+        }
+    }
+
+    if (render_state->pool_data != NULL) {
+        munmap(render_state->pool_data, render_state->pool_size);
+        render_state->pool_data = NULL;
+    }
+}
+
 int
 setup_lock_screen(struct anvi_state *state, struct anvi_output *output) {
 
     anvi_log_info("Application either started or output got resized so setting up lock screen for output.");
 
-    // First we have to clean up the state. In the case of resize there is already a previous state
-    // that doesn't reflect reality anymore.
-    clean_up_render_state(output->render_state);
 
-    output->render_state = calloc(1, sizeof(struct anvi_render_state));
     if (output->render_state == NULL) {
-        anvi_log_error("Failed to allocate render state.");
-        return EXIT_FAILURE;
+        output->render_state = calloc(1, sizeof(struct anvi_render_state));
+        if (output->render_state == NULL) {
+            anvi_log_error("Failed to allocate render state.");
+            return EXIT_FAILURE;
+        }
+    } else {
+        // In the case of resize, we need to clean up the previous state.
+        clean_up_render_state(output->render_state);
     }
 
     const uint32_t stride = output->width * 4; // 4 because 4 channels
