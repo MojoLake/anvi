@@ -94,23 +94,17 @@ int handle_left_arrow(struct anvi_state *state) {
     return EXIT_SUCCESS;
 }
 
-int handle_right_arrow(struct anvi_state *state) {
-    (void)state;
-    return EXIT_SUCCESS;
-}
-
 
 bool check_and_handle_special_keys(struct anvi_state *state, xkb_keysym_t keysym) {
 
     switch (keysym) {
         case XKB_KEY_Left:
-            handle_left_arrow(state);
+            anvi_text_buffer_left_arrow(state->text_buffer);
             return true;
         case XKB_KEY_Right:
-            handle_right_arrow(state);
+            anvi_text_buffer_right_arrow(state->text_buffer);
             return true;
         case XKB_KEY_BackSpace:
-            // handle_backspace(state);
             anvi_text_buffer_backspace(state->text_buffer);
             return true;
     }
@@ -124,6 +118,7 @@ void handle_potential_text_input(struct anvi_state *state, xkb_keycode_t xkb_key
     char text[64];
     const int length = xkb_state_key_get_utf8(keyboard->xkb_state, xkb_keycode, text, sizeof(text));
 
+    // Temporary exit mechanism before word counting.
     if (length > 0  && (size_t)length < sizeof(text)) {
         // A was typed!
         if (text[0] == 'q') {
