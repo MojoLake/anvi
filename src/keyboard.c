@@ -89,11 +89,6 @@ static void leave(void *data,
     anvi_log_info("Serial: %" PRIu32 "\n", serial);
 }
 
-int handle_left_arrow(struct anvi_state *state) {
-    (void)state;
-    return EXIT_SUCCESS;
-}
-
 
 bool check_and_handle_special_keys(struct anvi_state *state, xkb_keysym_t keysym) {
 
