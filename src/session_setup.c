@@ -62,6 +62,12 @@ static void destroy_seat_proxy(struct wl_seat* seat) {
 
 void destroy_anvi_state(struct anvi_state *state) {
     destroy_outputs(state);
+
+    if (state->text_buffer != NULL) {
+        free(state->text_buffer);
+        state->text_buffer = NULL;
+    }
+
     if (state->wl_shm != NULL) {
         wl_shm_destroy(state->wl_shm);
         state->wl_shm = NULL;
@@ -227,6 +233,14 @@ static int exit_with_failure_and_message_and_cleanup_state(char* msg, struct anv
 
 int setup_initial_state(struct anvi_state *state) {
 
+    state->text_buffer = malloc(sizeof(struct anvi_text_buffer));
+
+    if (state->text_buffer == NULL) {
+        return exit_with_failure_and_message("Failed to allocate memory for text buffer.");
+    }
+    state->text_buffer->length_bytes = 0;
+    state->text_buffer->cursor_bytes = 0;
+    state->text_buffer->data[0] = '\0';
 
    	state->display = wl_display_connect(NULL);
   	if (state->display == NULL) {

@@ -96,7 +96,7 @@ render_text_to_buffer(struct anvi_state *state, struct anvi_buffer *buffer) {
     cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
     cairo_move_to(cr, 50, 80);
     cairo_set_font_size(cr, 48);
-    cairo_show_text(cr, state->text_buffer);
+    cairo_show_text(cr, state->text_buffer->data);
 
     cairo_destroy(cr);
     cairo_surface_flush(buffer->cairo_surface);

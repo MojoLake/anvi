@@ -5,10 +5,10 @@
 
 #include "ext-session-lock-v1-client-protocol.h"
 
+#include "text_buffer.h"
 #include "keyboard.h"
 
 struct anvi_output;
-constexpr uint32_t TEXT_BUFFER_SIZE = 2048;
 
 struct anvi_state {
     struct ext_session_lock_manager_v1 *session_lock_manager;
@@ -21,8 +21,7 @@ struct anvi_state {
     struct wl_seat *seat;
     struct anvi_keyboard *keyboard;
 
-    uint32_t text_buffer_next_free;
-    char text_buffer[TEXT_BUFFER_SIZE];
+    struct anvi_text_buffer *text_buffer;
 
     bool initialization_failed;
     bool session_is_locked;

@@ -14,13 +14,6 @@
 #include "log.h"
 #include "keyboard.h"
 
-struct anvi_keyboard {
-    struct wl_keyboard *proxy;
-    struct xkb_context *xkb_context;
-    struct xkb_keymap *xkb_keymap;
-    struct xkb_state *xkb_state;
-    bool key_pressed;
-};
 
 static void keymap(void *data,
 		       struct wl_keyboard *wl_keyboard,
@@ -106,17 +99,6 @@ int handle_right_arrow(struct anvi_state *state) {
     return EXIT_SUCCESS;
 }
 
-int handle_backspace(struct anvi_state *state) {
-
-    const uint32_t current_buffer_ind = state->text_buffer_next_free;
-    if (current_buffer_ind == 0 || current_buffer_ind > (uint32_t)sizeof(state->text_buffer)) {
-        return EXIT_FAILURE;
-    }
-
-    state->text_buffer[current_buffer_ind - 1] = '\0';
-    state->text_buffer_next_free = current_buffer_ind - 1;
-    return EXIT_SUCCESS;
-}
 
 bool check_and_handle_special_keys(struct anvi_state *state, xkb_keysym_t keysym) {
 
@@ -128,7 +110,8 @@ bool check_and_handle_special_keys(struct anvi_state *state, xkb_keysym_t keysym
             handle_right_arrow(state);
             return true;
         case XKB_KEY_BackSpace:
-            handle_backspace(state);
+            // handle_backspace(state);
+            anvi_text_buffer_backspace(state->text_buffer);
             return true;
     }
     return false;
@@ -148,13 +131,7 @@ void handle_potential_text_input(struct anvi_state *state, xkb_keycode_t xkb_key
         }
     }
 
-    for (int i = 0; i < length; ++i) {
-        const int buffer_ind = state->text_buffer_next_free;
-        if (buffer_ind < (int)sizeof(state->text_buffer)) {
-            state->text_buffer[buffer_ind] = text[i];
-            state->text_buffer_next_free = buffer_ind + 1;
-        }
-    }
+    anvi_text_buffer_insert(state->text_buffer, text, length);
 }
 
 static void key(void *data,

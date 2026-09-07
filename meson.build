@@ -62,6 +62,7 @@ executable(
     'src/output.c',
     'src/buffer.c',
     'src/log.c',
+    'src/text_buffer.c',
     session_lock_header,
     session_lock_code,
   ],
@@ -71,3 +72,5 @@ executable(
     cairo,
   ]
 )
+
+subdir('tests')

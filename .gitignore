@@ -12,4 +12,7 @@
 !/src/
 !/src/**
 
+!/tests
+!/tests/**
+
 !/niri-nested.kdl
