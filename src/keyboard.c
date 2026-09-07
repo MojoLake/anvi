@@ -29,7 +29,7 @@ static void keymap(void *data,
         return;
     }
     
-    struct anvi_state *state = (struct anvi_state *)data;
+    struct anvi_state *state = data;
     struct anvi_keyboard *keyboard = state->keyboard;
 
     char* map_shm = mmap(NULL, size, PROT_READ, MAP_PRIVATE, fd, 0);
@@ -170,7 +170,7 @@ static void modifiers(void *data,
 			  uint32_t group) {
     (void)wl_keyboard;
     (void)serial;
-    struct anvi_state *state = (struct anvi_state *)data;
+    struct anvi_state *state = data;
     struct anvi_keyboard *keyboard = state->keyboard;
 
     if (keyboard->xkb_state == NULL) {
