@@ -9,12 +9,13 @@
 #include "output.h"
 #include "buffer.h"
 
-void seat_capabilities(void *data, struct wl_seat *seat, uint32_t capabilities) {
+static void
+seat_capabilities(void *data, struct wl_seat *seat, uint32_t capabilities) {
 
     struct anvi_state *state = data;
     
     if (capabilities & WL_SEAT_CAPABILITY_KEYBOARD) {
-        printf("Seat has a keyboard\n");
+        anvi_log_info("Seat has a keyboard");
         if (state->keyboard == NULL) {
             state->keyboard = anvi_keyboard_create(state, seat);
 
@@ -23,7 +24,7 @@ void seat_capabilities(void *data, struct wl_seat *seat, uint32_t capabilities) 
             }
         }
     } else {
-        printf("Seat doesn't have a keyboard (anymore?)\n");
+        anvi_log_info("Seat doesn't have a keyboard (anymore?)\n");
         if (state->keyboard != NULL) {
             anvi_keyboard_destroy(state->keyboard);
             state->keyboard = NULL;
@@ -31,15 +32,16 @@ void seat_capabilities(void *data, struct wl_seat *seat, uint32_t capabilities) 
     }
 
     if (capabilities & WL_SEAT_CAPABILITY_POINTER) {
-        printf("Seat has a pointer\n");
+        anvi_log_info("Seat has a pointer\n");
     }
 }
 
-void seat_name(void *data, struct wl_seat *seat, const char *name) {
+static void
+seat_name(void *data, struct wl_seat *seat, const char *name) {
     (void)data;
     (void)seat;
 
-    printf("Seat name: %s\n", name);
+    anvi_log_info("Seat name: %s\n", name);
 }
 
 static const struct wl_seat_listener seat_listener = {
@@ -47,7 +49,8 @@ static const struct wl_seat_listener seat_listener = {
     .name = seat_name,
 };
 
-static void destroy_seat_proxy(struct wl_seat* seat) {
+static void
+destroy_seat_proxy(struct wl_seat* seat) {
     if (seat == NULL) {
         return;
     }
@@ -60,7 +63,8 @@ static void destroy_seat_proxy(struct wl_seat* seat) {
 }
 
 
-void destroy_anvi_state(struct anvi_state *state) {
+void
+destroy_anvi_state(struct anvi_state *state) {
     destroy_outputs(state);
 
     if (state->text_buffer != NULL) {
@@ -105,20 +109,22 @@ void destroy_anvi_state(struct anvi_state *state) {
 }
 
 
-static void session_locked(void *data, struct ext_session_lock_v1 *ext_session_lock_v1) {
+static void
+session_locked(void *data, struct ext_session_lock_v1 *ext_session_lock_v1) {
     (void)ext_session_lock_v1;
     struct anvi_state *state = data;
     state->session_is_locked = true;
-    printf("The session is locked!\n");
+    anvi_log_info("The session is locked!\n");
 }
 
-static void session_finished(void *data, struct ext_session_lock_v1 *ext_session_lock_v1) {
+static void
+session_finished(void *data, struct ext_session_lock_v1 *ext_session_lock_v1) {
     (void)ext_session_lock_v1;
 
     struct anvi_state *state = data;
     state->session_is_finished = true;
 
-    printf("The lock has been rejected or terminated.\n");
+    anvi_log_info("The lock has been rejected or terminated.\n");
 }
 
 static const struct ext_session_lock_v1_listener session_lock_listener = {
@@ -126,7 +132,8 @@ static const struct ext_session_lock_v1_listener session_lock_listener = {
     .finished = session_finished
 };
 
-static void registry_global(
+static void
+registry_global(
     void *data,
     struct wl_registry *registry,
     uint32_t name,
@@ -198,7 +205,8 @@ static void registry_global(
     }
 }
 
-static void registry_global_remove(
+static void
+registry_global_remove(
       void *data,
       struct wl_registry *registry,
       uint32_t name
@@ -220,18 +228,21 @@ static const struct wl_registry_listener registry_listener = {
     .global_remove = registry_global_remove,
 };
 
-static int exit_with_failure_and_message(char* msg) {
+static int
+exit_with_failure_and_message(char* msg) {
     anvi_log_error(msg);
     return EXIT_FAILURE;
 }
 
-static int exit_with_failure_and_message_and_cleanup_state(char* msg, struct anvi_state *state) {
+static int
+exit_with_failure_and_message_and_cleanup_state(char* msg, struct anvi_state *state) {
 
     destroy_anvi_state(state);
     return exit_with_failure_and_message(msg);
 }
 
-int setup_initial_state(struct anvi_state *state) {
+int
+setup_initial_state(struct anvi_state *state) {
 
     state->text_buffer = malloc(sizeof(struct anvi_text_buffer));
 
