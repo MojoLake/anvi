@@ -239,6 +239,30 @@ clean_up_render_state(struct anvi_render_state *render_state) {
     }
 }
 
+static struct wl_shm_pool *
+setup_shm_pool(struct anvi_state *state, struct anvi_output *output, const size_t stride) {
+
+    const size_t pool_size = output->height * stride * 2; // x2 because we have two buffers
+
+    const int fd = allocate_shm_file(pool_size);
+    if (fd < 0) {
+        anvi_log_error("Failed to allocate shm file\n");
+        return NULL;
+    }
+
+    if (setup_pool_data(output, pool_size, fd) == EXIT_FAILURE) {
+        close(fd);
+        return NULL;
+    }
+
+    anvi_log_info("Pool data was setup successfully!\n");
+
+    struct wl_shm_pool *shm_pool = wl_shm_create_pool(state->wl_shm, fd, pool_size);
+    close(fd);
+
+    return shm_pool;
+}
+
 int
 setup_lock_screen(struct anvi_state *state, struct anvi_output *output) {
 
@@ -256,26 +280,9 @@ setup_lock_screen(struct anvi_state *state, struct anvi_output *output) {
         clean_up_render_state(output->render_state);
     }
 
-    const uint32_t stride = output->width * 4; // 4 because 4 channels
-    const size_t pool_size = output->height * stride * 2; // x2 because we have two buffers
+    const size_t stride = output->width * 4; // 4 because 4 channels
 
-    const int fd = allocate_shm_file(pool_size);
-    if (fd < 0) {
-        anvi_log_error("Failed to allocate shm file\n");
-        return EXIT_FAILURE;
-    }
-
-    if (setup_pool_data(output, pool_size, fd) == EXIT_FAILURE) {
-        close(fd);
-        clean_up_render_state(output->render_state);
-        return EXIT_FAILURE;
-    }
-
-    anvi_log_info("Pool data was setup successfully!\n");
-
-    struct wl_shm_pool *shm_pool = wl_shm_create_pool(state->wl_shm, fd, pool_size);
-    close(fd); // Not needed anymore.
-
+    struct wl_shm_pool *shm_pool = setup_shm_pool(state, output, stride);
     if (shm_pool == NULL) {
         anvi_log_error("Failed to create wl_shm_pool\n");
         clean_up_render_state(output->render_state);
