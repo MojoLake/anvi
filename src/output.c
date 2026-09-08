@@ -10,7 +10,8 @@
 #include "buffer.h"
 
 
-static void destroy_output_proxy(struct wl_output *output) {
+static void
+destroy_output_proxy(struct wl_output *output) {
     if (output == NULL) {
         return;
     }
@@ -22,7 +23,8 @@ static void destroy_output_proxy(struct wl_output *output) {
     }
 }
 
-void destroy_anvi_output(struct anvi_output *output) {
+static void
+destroy_anvi_output(struct anvi_output *output) {
 
     if (output == NULL) {
         return;
@@ -47,7 +49,8 @@ void destroy_anvi_output(struct anvi_output *output) {
     free(output);
 }
 
-void destroy_outputs(struct anvi_state *state) {
+void
+destroy_outputs(struct anvi_state *state) {
     struct anvi_output *current_output = state->outputs;
 
     while (current_output != NULL) {
@@ -61,7 +64,8 @@ void destroy_outputs(struct anvi_state *state) {
     state->outputs = NULL;
 }
 
-bool remove_anvi_output(struct anvi_state *state, uint32_t registry_name) {
+bool
+remove_anvi_output(struct anvi_state *state, uint32_t registry_name) {
     
     struct anvi_output *current_output = state->outputs;
 
@@ -86,7 +90,8 @@ bool remove_anvi_output(struct anvi_state *state, uint32_t registry_name) {
     return false; // Didn't find the output to be removed
 }
 
-int create_and_bind_anvi_output(struct anvi_state* state, struct wl_registry *registry, uint32_t name, uint32_t bind_version) {
+int
+create_and_bind_anvi_output(struct anvi_state* state, struct wl_registry *registry, uint32_t name, uint32_t bind_version) {
 
     uint32_t client_version = (uint32_t)wl_output_interface.version;
 
@@ -125,7 +130,8 @@ int create_and_bind_anvi_output(struct anvi_state* state, struct wl_registry *re
     return EXIT_SUCCESS;
 }
 
-static void lock_surface_configure(
+static void
+lock_surface_configure(
     void *data,
     struct ext_session_lock_surface_v1 *lock_surface,
     uint32_t serial,
@@ -155,7 +161,8 @@ const struct ext_session_lock_surface_v1_listener lock_surface_listener = {
 };
 
 
-int create_surfaces_for_outputs(struct anvi_state *state) {
+int
+create_surfaces_for_outputs(struct anvi_state *state) {
 
     for (struct anvi_output *output = state->outputs; output != NULL; output = output->next) {
         output->surface = wl_compositor_create_surface(state->wl_compositor);
