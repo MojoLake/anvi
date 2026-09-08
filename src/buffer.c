@@ -282,7 +282,7 @@ setup_lock_screen(struct anvi_state *state, struct anvi_output *output) {
         return EXIT_FAILURE;
     }
 
-    anvi_log_info("wl_shm_pool was created successfully!\n");
+    anvi_log_info("wl_shm_pool was created successfully!");
 
     if (setup_two_buffers(output, shm_pool, stride) == EXIT_FAILURE) {
         clean_up_render_state(output->render_state);
