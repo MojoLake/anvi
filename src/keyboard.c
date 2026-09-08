@@ -137,6 +137,8 @@ static void key(void *data,
     struct anvi_state *state = (struct anvi_state *)data;
     struct anvi_keyboard *keyboard = state->keyboard;
 
+    anvi_log_info("Some key was pressed with keycode = %zu", wayland_keycode);
+
     if (keyboard->xkb_state == NULL) {
         anvi_log_error("No xkb_state found for keyboard...");
         return;
