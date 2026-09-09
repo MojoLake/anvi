@@ -64,6 +64,31 @@ void test_backspace_works_when_cursor_in_the_middle() {
     assert(strcmp(tb.data, "mi") == 0);
 }
 
+void test_backspace_works_with_umlaut() {
+    struct anvi_text_buffer tb = {0};
+
+    char* text = "minä";
+    const int len = strlen(text);
+
+    initialise_text_buffer_with_text(&tb, text, len);
+
+    assert(anvi_text_buffer_backspace(&tb) == EXIT_SUCCESS);
+    assert(strcmp(tb.data, "min") == 0);
+}
+
+void test_backspace_works_with_umlaut_with_cursor_in_middle() {
+    struct anvi_text_buffer tb = {0};
+
+    char* text = "itään";
+    const int len = strlen(text);
+
+    initialise_text_buffer_with_text(&tb, text, len);
+
+    anvi_text_buffer_move_cursor_in_dir(&tb, ANVI_CURSOR_LEFT);
+    assert(anvi_text_buffer_backspace(&tb) == EXIT_SUCCESS);
+    assert(strcmp(tb.data, "itän") == 0);
+}
+
 void test_insert_works_with_small_example_with_cursor_at_the_end() {
     struct anvi_text_buffer tb = {0};
 
@@ -98,4 +123,6 @@ main(void) {
     test_backspace_works_when_cursor_in_the_middle();
     test_insert_works_with_small_example_with_cursor_at_the_end();
     test_insert_works_with_small_example_with_cursor_at_the_middle();
+    test_backspace_works_with_umlaut();
+    test_backspace_works_with_umlaut_with_cursor_in_middle();
 }
