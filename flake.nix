@@ -24,6 +24,7 @@
             wayland-protocols
             cairo
             libgrapheme
+            pango
           ];
         };
       };
