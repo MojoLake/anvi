@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "../src/text_buffer.h"
+#include "text_buffer.h"
 
 void
 clear_text_buffer(struct anvi_text_buffer *tb) {
@@ -25,12 +25,12 @@ initialise_text_buffer_with_text(struct anvi_text_buffer *tb, char *text, size_t
 }
 
 void test_backspace_does_nothing_when_empty_text_buffer() {
-    struct anvi_text_buffer *tb = malloc(sizeof(struct anvi_text_buffer));
-    initialise_text_buffer_with_text(tb, "", 0);
+    struct anvi_text_buffer tb = {0};
+    initialise_text_buffer_with_text(&tb, "", 0);
 
-    assert(anvi_text_buffer_backspace(tb) == EXIT_SUCCESS);
+    assert(anvi_text_buffer_backspace(&tb) == EXIT_SUCCESS);
 
-    assert(tb->cursor_bytes == 0 && tb->length_bytes == 0 && tb->data[0] == '\0');
+    assert(tb.cursor_bytes == 0 && tb.length_bytes == 0 && tb.data[0] == '\0');
 }
 
 int main(void) {

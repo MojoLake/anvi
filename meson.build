@@ -73,4 +73,4 @@ executable(
   ]
 )
 
-# subdir('tests')
+subdir('tests')

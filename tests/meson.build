@@ -10,6 +10,7 @@ test('setup', setup_test)
 text_buffer_test = executable(
   'text_buffer_test',
   'text_buffer_test.c',
+  '../src/text_buffer.c',
   include_directories: src_inc,
 )
 
