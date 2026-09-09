@@ -1,5 +1,7 @@
 #include <string.h>
 
+#include <cairo.h>
+#include <pango/pangocairo.h>
 #include <wayland-client.h>
 
 #include <anvi/app.h>
@@ -15,12 +17,25 @@ render_text_to_buffer(struct anvi_state *state, struct anvi_buffer *buffer) {
 
     cairo_t *cr = cairo_create(buffer->cairo_surface);
 
+    PangoLayout *layout = pango_cairo_create_layout(cr);
+
+    pango_layout_set_text(layout, state->text_buffer->data, -1);
+
+    PangoFontDescription *font = pango_font_description_from_string("Sans 16");
+    pango_layout_set_font_description(layout, font);
+
+    pango_layout_set_width(layout, 400 * PANGO_SCALE); // TODO: change 400 to actual width
+
+    pango_layout_set_wrap(layout, PANGO_WRAP_WORD_CHAR);
+
     anvi_log_info("Rendering text to buffer...\n");
     cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
     cairo_move_to(cr, 50, 80);
-    cairo_set_font_size(cr, 34);
-    cairo_show_text(cr, state->text_buffer->data);
 
+    pango_cairo_show_layout(cr, layout);
+
+    pango_font_description_free(font);
+    g_object_unref(layout);
     cairo_destroy(cr);
     cairo_surface_flush(buffer->cairo_surface);
 }
