@@ -2,21 +2,48 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <grapheme.h>
+
 #include <anvi/text_buffer.h>
 
-void
+static size_t
+find_length_of_grapheme_to_left_of_cursor(struct anvi_text_buffer *tb) {
+    for (size_t i = 0; i < tb->length_bytes;) {
+        const size_t adv = grapheme_next_character_break_utf8(tb->data + i, tb->length_bytes - i);
+        if (adv == 0) {
+            return 0;
+        }
+        if (i + adv == tb->cursor_bytes) {
+            return adv;
+        }
+        i  += adv;
+    }
+    return 0; // Couldn't find the position so something went wrong.
+}
+
+int
 anvi_text_buffer_move_cursor_in_dir(struct anvi_text_buffer *tb, enum anvi_cursor_direction dir) {
     assert(dir == ANVI_CURSOR_LEFT || dir == ANVI_CURSOR_RIGHT);
     if (dir == ANVI_CURSOR_LEFT) {
-        if (tb->cursor_bytes > 0) {
-            tb->cursor_bytes--;
+
+        // We need to find the length of the grapheme before the cursor.
+        const size_t len = find_length_of_grapheme_to_left_of_cursor(tb);
+        if (len == 0) {
+            return EXIT_FAILURE;
         }
+
+        assert(tb->cursor_bytes >= len);
+        tb->cursor_bytes -= len;
+        return EXIT_SUCCESS;
     } else if (dir == ANVI_CURSOR_RIGHT){
-        if (tb->cursor_bytes < tb->length_bytes) {
-            tb->cursor_bytes++;
+        size_t advance = grapheme_next_character_break_utf8(tb->data + tb->cursor_bytes, tb->length_bytes - tb->cursor_bytes);
+        if (tb->cursor_bytes + advance <= tb->length_bytes) {
+            tb->cursor_bytes += advance;
         }
+        return EXIT_SUCCESS;
     } else {
-        assert(false);
+        // Should never even get here.
+        return EXIT_FAILURE;
     }
 }
 
@@ -80,17 +107,11 @@ anvi_text_buffer_right_arrow(struct anvi_text_buffer *tb) {
      * ] int try_move_cursor(int dp) (dp = displacement)
      *      
      */
-    if (tb->cursor_bytes < tb->length_bytes) {
-        tb->cursor_bytes++;
-    }
-    return EXIT_SUCCESS;
+    return anvi_text_buffer_move_cursor_in_dir(tb, ANVI_CURSOR_RIGHT);
 }
 
 int
 anvi_text_buffer_left_arrow(struct anvi_text_buffer *tb) {
     
-    if (tb->cursor_bytes > 0) {
-        tb->cursor_bytes--;
-    }
-    return EXIT_SUCCESS;
+    return anvi_text_buffer_move_cursor_in_dir(tb, ANVI_CURSOR_LEFT);
 }

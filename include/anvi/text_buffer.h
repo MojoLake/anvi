@@ -18,7 +18,7 @@ struct anvi_text_buffer {
 };
 
 
-void anvi_text_buffer_move_cursor_in_dir(struct anvi_text_buffer *tb, enum anvi_cursor_direction dir);
+int anvi_text_buffer_move_cursor_in_dir(struct anvi_text_buffer *tb, enum anvi_cursor_direction dir);
 int anvi_text_buffer_backspace(struct anvi_text_buffer *text_buffer);
 int anvi_text_buffer_insert(struct anvi_text_buffer *text_buffer, const char *text, size_t byte_length);
 int anvi_text_buffer_right_arrow(struct anvi_text_buffer *tb);
