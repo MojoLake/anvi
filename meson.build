@@ -11,6 +11,7 @@ project(
 
 xkbcommon = dependency('xkbcommon')
 cairo = dependency('cairo')
+pango = dependency('pango')
 libgrapheme = dependency('libgrapheme')
 
 wayland_client = dependency('wayland-client', version: '>=1.20')
@@ -75,6 +76,7 @@ executable(
     wayland_client,
     xkbcommon,
     cairo,
+    pango,
     libgrapheme,
   ]
 )
