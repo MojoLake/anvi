@@ -59,17 +59,15 @@ anvi_text_buffer_backspace(struct anvi_text_buffer *tb) {
         return EXIT_FAILURE;
     }
 
-    // NOTE: this doesn't yet handle graphemes well and
-    // basically just assumes every grapheme is one byte.
+    size_t dec = find_length_of_grapheme_to_left_of_cursor(tb);
 
     size_t amount_to_move = tb->length_bytes - tb->cursor_bytes;
-    memmove(tb->data + tb->cursor_bytes - 1, tb->data + tb->cursor_bytes, amount_to_move + 1);
+    memmove(tb->data + tb->cursor_bytes - dec, tb->data + tb->cursor_bytes, amount_to_move + 1);
     
-    // tb->data[tb->length_bytes - 1] = '\0';
-    assert(tb->data[tb->length_bytes - 1] == '\0');
+    assert(tb->data[tb->length_bytes - dec] == '\0');
 
-    tb->length_bytes--;
-    tb->cursor_bytes--;
+    tb->length_bytes -= dec;
+    tb->cursor_bytes -= dec;
 
     return EXIT_SUCCESS;
 }
