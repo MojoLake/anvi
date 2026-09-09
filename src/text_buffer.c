@@ -4,6 +4,21 @@
 
 #include <anvi/text_buffer.h>
 
+void
+anvi_text_buffer_move_cursor_in_dir(struct anvi_text_buffer *tb, enum anvi_cursor_direction dir) {
+    assert(dir == ANVI_CURSOR_LEFT || dir == ANVI_CURSOR_RIGHT);
+    if (dir == ANVI_CURSOR_LEFT) {
+        if (tb->cursor_bytes > 0) {
+            tb->cursor_bytes--;
+        }
+    } else if (dir == ANVI_CURSOR_RIGHT){
+        if (tb->cursor_bytes < tb->length_bytes) {
+            tb->cursor_bytes++;
+        }
+    } else {
+        assert(false);
+    }
+}
 
 int
 anvi_text_buffer_backspace(struct anvi_text_buffer *tb) {
@@ -31,6 +46,7 @@ anvi_text_buffer_backspace(struct anvi_text_buffer *tb) {
 
     return EXIT_SUCCESS;
 }
+
 
 int
 anvi_text_buffer_insert(struct anvi_text_buffer *tb, const char *text, size_t byte_length) {
