@@ -102,6 +102,9 @@ bool check_and_handle_special_keys(struct anvi_state *state, xkb_keysym_t keysym
         case XKB_KEY_BackSpace:
             anvi_text_buffer_backspace(state->text_buffer);
             return true;
+        case XKB_KEY_Return:
+            anvi_text_buffer_insert(state->text_buffer, "\n", 1);
+            return true;
     }
     return false;
 }

@@ -23,6 +23,7 @@
             libxkbcommon
             wayland-protocols
             cairo
+            libgrapheme
           ];
         };
       };
