@@ -66,6 +66,7 @@ executable(
     'src/buffer.c',
     'src/log.c',
     'src/text_buffer.c',
+    'src/render.c',
     session_lock_header,
     session_lock_code,
   ],

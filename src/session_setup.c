@@ -8,6 +8,7 @@
 #include <anvi/log.h>
 #include <anvi/output.h>
 #include <anvi/buffer.h>
+#include <anvi/render.h>
 
 static void
 seat_capabilities(void *data, struct wl_seat *seat, uint32_t capabilities) {
@@ -132,23 +133,6 @@ static const struct ext_session_lock_v1_listener session_lock_listener = {
     .finished = session_finished
 };
 
-static const struct wl_callback_listener wl_surface_frame_listener;
-
-static void
-surface_frame_done(void *data, struct wl_callback *cb, uint32_t time) {
-    (void)time;
-    wl_callback_destroy(cb);
-
-    struct anvi_output *output = data;
-    cb = wl_surface_frame(output->surface);
-    wl_callback_add_listener(cb, &wl_surface_frame_listener, output);
-
-    draw_screen(output->state, output);
-}
-
-static const struct wl_callback_listener wl_surface_frame_listener = {
-    .done = surface_frame_done,
-};
 
 static void
 registry_global(
@@ -337,9 +321,7 @@ setup_initial_state(struct anvi_state *state) {
         return exit_with_failure_and_message_and_cleanup_state("Something went wrong with creating surfaces for outputs...\n", state);
     }
 
-    for (struct anvi_output *output = state->outputs; output != NULL; output = output->next) {
-        struct wl_callback *cb = wl_surface_frame(output->surface);
-        wl_callback_add_listener(cb, &wl_surface_frame_listener, output);
-    }
+    add_surface_frame_listeners_for_outputs(state);
+
     return EXIT_SUCCESS;
 }

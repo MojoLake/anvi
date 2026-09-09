@@ -23,5 +23,7 @@ int create_and_bind_wl_shm(struct anvi_state* state, struct wl_registry *registr
 int setup_lock_screen(struct anvi_state *state, struct anvi_output *output);
 void draw_screen(struct anvi_state *state, struct anvi_output *output);
 void clean_up_render_state(struct anvi_render_state *render_state);
+struct anvi_buffer * find_free_buffer(struct anvi_output *output);
+void present_buffer(struct anvi_output *output, struct wl_buffer *buffer_proxy);
 
 #endif
