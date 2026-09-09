@@ -89,6 +89,19 @@ void test_backspace_works_with_umlaut_with_cursor_in_middle() {
     assert(strcmp(tb.data, "itän") == 0);
 }
 
+void test_backspace_works_for_emoji() {
+    
+    struct anvi_text_buffer tb = {0};
+
+    char* text = "yoo🔥wassup🔥";
+    const int len = strlen(text);
+
+    initialise_text_buffer_with_text(&tb, text, len);
+
+    assert(anvi_text_buffer_backspace(&tb) == EXIT_SUCCESS);
+    assert(strcmp(tb.data, "yoo🔥wassup") == 0);
+}
+
 void test_insert_works_with_small_example_with_cursor_at_the_end() {
     struct anvi_text_buffer tb = {0};
 
@@ -121,8 +134,10 @@ main(void) {
     test_backspace_does_nothing_when_empty_text_buffer();
     test_backspace_works_small_example();
     test_backspace_works_when_cursor_in_the_middle();
-    test_insert_works_with_small_example_with_cursor_at_the_end();
-    test_insert_works_with_small_example_with_cursor_at_the_middle();
     test_backspace_works_with_umlaut();
     test_backspace_works_with_umlaut_with_cursor_in_middle();
+    test_backspace_works_for_emoji();
+
+    test_insert_works_with_small_example_with_cursor_at_the_end();
+    test_insert_works_with_small_example_with_cursor_at_the_middle();
 }
