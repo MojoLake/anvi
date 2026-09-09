@@ -39,10 +39,6 @@ int main(void) {
             break;
         }
 
-        for (struct anvi_output *output = state.outputs; output != NULL; output = output->next) {
-            draw_screen(&state, output);
-        }
-
         if (state.session_is_finished) {
             if (state.session_is_locked) {
                 ext_session_lock_v1_unlock_and_destroy(state.session_lock);
