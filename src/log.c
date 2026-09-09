@@ -1,7 +1,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#include "log.h"
+#include <anvi/log.h>
 
 
 void anvi_log(enum anvi_log_level level, const char *format, ...) {

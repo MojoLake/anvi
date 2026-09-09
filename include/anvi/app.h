@@ -5,8 +5,8 @@
 
 #include "ext-session-lock-v1-client-protocol.h"
 
-#include "text_buffer.h"
-#include "keyboard.h"
+#include <anvi/text_buffer.h>
+#include <anvi/keyboard.h>
 
 struct anvi_output;
 

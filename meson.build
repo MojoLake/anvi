@@ -53,6 +53,8 @@ session_lock_code = custom_target(
   ],
 )
 
+anvi_inc = include_directories('include')
+
 executable(
   'anvi',
   [
@@ -66,6 +68,7 @@ executable(
     session_lock_header,
     session_lock_code,
   ],
+  include_directories: anvi_inc,
   dependencies: [
     wayland_client,
     xkbcommon,

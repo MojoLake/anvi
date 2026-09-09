@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "text_buffer.h"
+#include <anvi/text_buffer.h>
 
 void
 clear_text_buffer(struct anvi_text_buffer *tb) {
@@ -37,4 +37,3 @@ int main(void) {
     
     test_backspace_does_nothing_when_empty_text_buffer();
 }
-

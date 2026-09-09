@@ -4,10 +4,10 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-#include "app.h"
-#include "log.h"
-#include "output.h"
-#include "buffer.h"
+#include <anvi/app.h>
+#include <anvi/log.h>
+#include <anvi/output.h>
+#include <anvi/buffer.h>
 
 static void
 seat_capabilities(void *data, struct wl_seat *seat, uint32_t capabilities) {
@@ -320,4 +320,3 @@ setup_initial_state(struct anvi_state *state) {
     }
     return EXIT_SUCCESS;
 }
-

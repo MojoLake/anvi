@@ -14,6 +14,10 @@
 !/src/
 !/src/**
 
+!/include
+!/include/anvi
+!/include/anvi/**
+
 !/tests
 !/tests/**
 

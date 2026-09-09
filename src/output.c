@@ -4,10 +4,10 @@
 
 #include <wayland-client.h>
 
-#include "app.h"
-#include "log.h"
-#include "output.h"
-#include "buffer.h"
+#include <anvi/app.h>
+#include <anvi/log.h>
+#include <anvi/output.h>
+#include <anvi/buffer.h>
 
 
 static void

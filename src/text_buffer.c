@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "text_buffer.h"
+#include <anvi/text_buffer.h>
 
 
 int

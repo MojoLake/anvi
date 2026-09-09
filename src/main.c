@@ -9,12 +9,12 @@
 
 #include "ext-session-lock-v1-client-protocol.h"
 
-#include "app.h"
-#include "log.h"
-#include "output.h"
-#include "buffer.h"
-#include "keyboard.h"
-#include "session_setup.h"
+#include <anvi/app.h>
+#include <anvi/log.h>
+#include <anvi/output.h>
+#include <anvi/buffer.h>
+#include <anvi/keyboard.h>
+#include <anvi/session_setup.h>
 
 
 int exit_with_failure_and_message(char* msg) {
