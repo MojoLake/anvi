@@ -10,7 +10,7 @@
 #include <anvi/buffer.h>
 
 static void
-render_text_to_buffer(struct anvi_state *state, struct anvi_buffer *buffer) {
+render_text_to_buffer(struct anvi_state *state, struct anvi_output *output, struct anvi_buffer *buffer) {
 
     // Clear the buffer.
     memset(buffer->data, 0, buffer->size);
@@ -24,13 +24,16 @@ render_text_to_buffer(struct anvi_state *state, struct anvi_buffer *buffer) {
     PangoFontDescription *font = pango_font_description_from_string("Sans 16");
     pango_layout_set_font_description(layout, font);
 
-    pango_layout_set_width(layout, 400 * PANGO_SCALE); // TODO: change 400 to actual width
+    const size_t margin_width = 50;
+    const size_t top_padding = 40;
+
+    pango_layout_set_width(layout, (output->width - 2 * margin_width) * PANGO_SCALE);
 
     pango_layout_set_wrap(layout, PANGO_WRAP_WORD_CHAR);
 
     anvi_log_info("Rendering text to buffer...\n");
     cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-    cairo_move_to(cr, 50, 80);
+    cairo_move_to(cr, margin_width, top_padding);
 
     pango_cairo_show_layout(cr, layout);
 
@@ -49,7 +52,7 @@ draw_screen(struct anvi_state *state, struct anvi_output *output) {
         return;
     }
     free_buffer->busy = true;
-    render_text_to_buffer(state, free_buffer);
+    render_text_to_buffer(state, output, free_buffer);
     present_buffer(output, free_buffer->proxy);
 }
 
