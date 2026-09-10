@@ -1,9 +1,10 @@
-#define _GNU_SOURCE 200112L // Right now Linux only? (gnu only)
+#define _GNU_SOURCE
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <poll.h>
 
 #include <wayland-client.h>
 
@@ -50,9 +51,41 @@ int main(void) {
     anvi_log_info("Initial state setup successfully.\n");
 
     while (true) {
-        if (wl_display_dispatch(state.display) < 0) {
-            anvi_log_error("Wayland event dispatch failed...");
-            break;
+
+        wl_display_dispatch_pending(state.display);
+        wl_display_prepare_read(state.display);
+        wl_display_flush(state.display);
+
+        const int wayland_fd = wl_display_get_fd(state.display);
+        const int timer_fd = state.keyboard->repeat_timer_fd;
+
+        struct pollfd fds[2] = {
+            {
+                .fd = wayland_fd,
+                .events = POLLIN,
+            },
+            {
+                .fd = timer_fd,
+                .events = POLLIN,
+            },
+        };
+        // if (wl_display_dispatch(state.display) < 0) {
+        //     anvi_log_error("Wayland event dispatch failed...");
+        //     break;
+        // }
+        const int result = poll(fds, 2, -1);
+        anvi_log_info("Result: %d", result);
+
+        if (fds[0].revents & POLLIN) {
+            wl_display_read_events(state.display);
+        } else {
+            wl_display_cancel_read(state.display);
+        }
+
+        wl_display_dispatch_pending(state.display);
+
+        if (fds[1].revents & POLLIN) {
+            handle_timer(&state); 
         }
 
         if (state.session_is_finished) {

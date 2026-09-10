@@ -32,5 +32,6 @@ void
 anvi_keyboard_destroy(struct anvi_keyboard *keyboard);
 
 bool anvi_keyboard_is_ready(const struct anvi_keyboard *keyboard);
+void handle_timer(struct anvi_state *state);
 
 #endif

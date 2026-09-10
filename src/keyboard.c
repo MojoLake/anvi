@@ -7,6 +7,7 @@
 #include <sys/mman.h>
 #include <time.h>
 #include <sys/timerfd.h>
+#include <assert.h>
 
 #include <xkbcommon/xkbcommon.h>
 #include <xkbcommon/xkbcommon-keysyms.h>
@@ -133,6 +134,41 @@ void handle_potential_text_input(struct anvi_state *state, xkb_keycode_t xkb_key
 }
 
 static void
+handle_key_press(struct anvi_state *state, xkb_keycode_t xkb_keycode) {
+
+    struct anvi_keyboard *keyboard = state->keyboard;
+
+    xkb_keysym_t keysym = xkb_state_key_get_one_sym(keyboard->xkb_state, xkb_keycode);
+    bool special_key = check_and_handle_special_keys(state, keysym);
+
+    // Even though special_key == false here it might just be that we missed some special key in our `check_and_handle_special_keys` -function. Just a fyi.
+    if (!special_key) {
+        handle_potential_text_input(state, xkb_keycode);
+    }
+
+}
+
+void
+handle_timer(struct anvi_state *state) {
+    struct anvi_keyboard *kb = state->keyboard;
+    assert(kb->repeat_timer_fd >= 0);
+
+    uint64_t expirations;
+
+    ssize_t bytes_read = read(kb->repeat_timer_fd, &expirations, sizeof(expirations));
+
+    if (!kb->repeat_active) {
+        return;
+    }
+    
+    if (bytes_read == sizeof(expirations)) {
+        handle_key_press(state, kb->repeating_keycode);
+    }
+
+    // Start new timer.
+}
+
+static void
 start_repeat_timer(struct anvi_keyboard *keyboard) {
     struct itimerspec timer = {0};
 
@@ -158,7 +194,9 @@ stop_key_repeat(struct anvi_keyboard *keyboard) {
     keyboard->repeat_active = false;
 }
 
-static void key(void *data,
+
+static void
+key(void *data,
 		    struct wl_keyboard *wl_keyboard,
 		    uint32_t serial,
 		    uint32_t time,
@@ -180,16 +218,9 @@ static void key(void *data,
 
     xkb_keycode_t xkb_keycode = wayland_keycode + 8;
 
-    xkb_keysym_t keysym = xkb_state_key_get_one_sym(keyboard->xkb_state, xkb_keycode);
 
     if (key_state == WL_KEYBOARD_KEY_STATE_PRESSED) {
-
-        bool special_key = check_and_handle_special_keys(state, keysym);
-
-        // Even thouh special_key == false here it might just be that we missed some special key in our `check_and_handle_special_keys` -function. Just a fyi.
-        if (!special_key) {
-            handle_potential_text_input(state, xkb_keycode);
-        }
+        handle_key_press(state, xkb_keycode);
 
         if (keyboard->repeat_rate > 0 && xkb_keymap_key_repeats(keyboard->xkb_keymap, xkb_keycode)) {
             keyboard->repeating_keycode = xkb_keycode;
