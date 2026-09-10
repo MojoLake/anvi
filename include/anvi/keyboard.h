@@ -1,6 +1,8 @@
 #ifndef ANVI_KEYBOARD_H
 #define ANVI_KEYBOARD_H
 
+#include <stdint.h>
+
 struct wl_seat;
 struct anvi_state;
 struct anvi_keyboard;
@@ -10,6 +12,10 @@ struct anvi_keyboard {
     struct xkb_context *xkb_context;
     struct xkb_keymap *xkb_keymap;
     struct xkb_state *xkb_state;
+
+    int32_t repeat_rate;
+    int32_t repeat_delay;
+
     bool key_pressed;
 };
 

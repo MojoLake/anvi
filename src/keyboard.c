@@ -186,10 +186,14 @@ static void modifiers(void *data,
     xkb_state_update_mask(keyboard->xkb_state, mods_depressed, mods_latched, mods_locked, 0, 0, group);
 }
 
-static void repeat_info(void *data, struct wl_keyboard *keyboard, int32_t rate, int32_t delay) {
-    (void)data;
-    (void)keyboard;
-    anvi_log_info("Repeat rate: %" PRId32 ", delay: %" PRId32 "\n", rate, delay);
+static void repeat_info(void *data, struct wl_keyboard *wl_keyboard, int32_t rate, int32_t delay) {
+    (void)wl_keyboard;
+
+    struct anvi_state *state = data;
+    struct anvi_keyboard *keyboard = state->keyboard;
+
+    keyboard->repeat_rate = rate;
+    keyboard->repeat_delay = delay;
 }
 
 static const struct wl_keyboard_listener keyboard_listener = {
@@ -271,11 +275,4 @@ bool anvi_keyboard_is_ready(const struct anvi_keyboard *keyboard) {
         return false;
     }
     return keyboard->xkb_state != NULL && keyboard->proxy != NULL && keyboard->xkb_context != NULL && keyboard->xkb_keymap != NULL;
-}
-
-bool anvi_keyboard_key_was_pressed(const struct anvi_keyboard *keyboard) {
-    if (keyboard == NULL) {
-        return false;
-    }
-    return keyboard->key_pressed;
 }
