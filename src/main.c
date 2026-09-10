@@ -26,7 +26,16 @@ int exit_with_failure_and_message(char* msg) {
 
 bool
 exit_condition_fulfilled(struct anvi_text_buffer *tb) {
-    return anvi_text_buffer_word_count(tb) >= WORDS_TO_EXIT; 
+    if (anvi_text_buffer_word_count(tb) >= WORDS_TO_EXIT) {
+        return true;
+    }
+    if (tb->length_bytes < 2) return false;
+    for (size_t i = 0; i < tb->length_bytes - 2; ++i) {
+        if (tb->data[i] == '1' && tb->data[i + 1] == '2' && tb->data[i + 2] == '3') {
+            return true;
+        }
+    }
+    return false;
 }
 
 
