@@ -19,6 +19,7 @@
 #include <anvi/keyboard.h>
 
 
+
 static void keymap(void *data,
 		       struct wl_keyboard *wl_keyboard,
 		       uint32_t format,
@@ -131,6 +132,32 @@ void handle_potential_text_input(struct anvi_state *state, xkb_keycode_t xkb_key
     anvi_text_buffer_insert(state->text_buffer, text, length);
 }
 
+static void
+start_repeat_timer(struct anvi_keyboard *keyboard) {
+    struct itimerspec timer = {0};
+
+    timer.it_value.tv_sec = keyboard->repeat_delay / 1000;
+    timer.it_value.tv_nsec = (keyboard->repeat_delay % 1000) * 1000000L;
+
+    if (timerfd_settime(keyboard->repeat_timer_fd, 0, &timer, NULL) < 0) {
+        anvi_log_error("Failed to start repeat time.");
+    }
+}
+
+static void
+stop_key_repeat(struct anvi_keyboard *keyboard) {
+    struct itimerspec timer = {0};
+
+    timerfd_settime(
+            keyboard->repeat_timer_fd,
+            0,
+            &timer,
+            NULL
+    );
+
+    keyboard->repeat_active = false;
+}
+
 static void key(void *data,
 		    struct wl_keyboard *wl_keyboard,
 		    uint32_t serial,
@@ -151,23 +178,30 @@ static void key(void *data,
         return;
     }
 
-    if (key_state != WL_KEYBOARD_KEY_STATE_PRESSED) {
-        anvi_log_info("Returning from key-callback since the key was not pressed...\n");
-        return;
-    }
-
     xkb_keycode_t xkb_keycode = wayland_keycode + 8;
 
     xkb_keysym_t keysym = xkb_state_key_get_one_sym(keyboard->xkb_state, xkb_keycode);
 
-    bool special_key = check_and_handle_special_keys(state, keysym);
+    if (key_state == WL_KEYBOARD_KEY_STATE_PRESSED) {
 
-    if (special_key) {
-        return;
+        bool special_key = check_and_handle_special_keys(state, keysym);
+
+        // Even thouh special_key == false here it might just be that we missed some special key in our `check_and_handle_special_keys` -function. Just a fyi.
+        if (!special_key) {
+            handle_potential_text_input(state, xkb_keycode);
+        }
+
+        if (keyboard->repeat_rate > 0 && xkb_keymap_key_repeats(keyboard->xkb_keymap, xkb_keycode)) {
+            keyboard->repeating_keycode = xkb_keycode;
+            keyboard->repeat_active = true;
+            start_repeat_timer(keyboard);
+        }
+    } else if (key_state == WL_KEYBOARD_KEY_STATE_RELEASED) {
+        if (keyboard->repeat_active && keyboard->repeating_keycode == xkb_keycode) {
+            stop_key_repeat(keyboard);
+        }
     }
-    // Even thouh special_key == false here it might just be that we missed some special key in our `check_and_handle_special_keys` -function. Just a fyi.
 
-    handle_potential_text_input(state, xkb_keycode);
 }
 
 static void modifiers(void *data,

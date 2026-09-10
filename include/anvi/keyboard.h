@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#include <xkbcommon/xkbcommon.h>
+
 struct wl_seat;
 struct anvi_state;
 struct anvi_keyboard;
@@ -13,6 +15,8 @@ struct anvi_keyboard {
     struct xkb_keymap *xkb_keymap;
     struct xkb_state *xkb_state;
 
+    xkb_keycode_t repeating_keycode;
+    bool repeat_active; 
     int repeat_timer_fd;
 
     int32_t repeat_rate;
