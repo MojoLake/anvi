@@ -35,7 +35,7 @@ int main(void) {
 
     while (true) {
         if (wl_display_dispatch(state.display) < 0) {
-            fprintf(stderr, "Wayland event dispatch failed...\n");
+            anvi_log_error("Wayland event dispatch failed...");
             break;
         }
 
