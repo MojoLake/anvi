@@ -165,7 +165,19 @@ handle_timer(struct anvi_state *state) {
         handle_key_press(state, kb->repeating_keycode);
     }
 
+    if (kb->repeat_rate == 0) {
+        return; // repeat rate of 0 means no repeat.
+    }
     // Start new timer.
+    struct itimerspec timer = {0};
+
+    int64_t interval_ns = 1000000000LL / kb->repeat_rate;
+    timer.it_value.tv_sec = interval_ns / 1000000000LL;
+    timer.it_value.tv_nsec = interval_ns % 1000000000LL;
+
+    if (timerfd_settime(kb->repeat_timer_fd, 0, &timer, NULL) < 0) {
+        anvi_log_error("Failed to start repeat time.");
+    }
 }
 
 static void
