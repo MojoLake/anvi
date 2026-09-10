@@ -37,6 +37,17 @@ render_text_to_buffer(struct anvi_state *state, struct anvi_output *output, stru
 
     pango_cairo_show_layout(cr, layout);
 
+    PangoRectangle pos;
+    pango_layout_get_cursor_pos(layout, state->text_buffer->cursor_bytes, &pos, NULL);
+
+    const double x = margin_width + pos.x / (double)PANGO_SCALE;
+    const double y = top_padding + pos.y / (double)PANGO_SCALE;
+    const double h = pos.height / (double)PANGO_SCALE;
+
+    cairo_move_to(cr, x, y);
+    cairo_line_to(cr, x, y + h);
+    cairo_stroke(cr);
+
     pango_font_description_free(font);
     g_object_unref(layout);
     cairo_destroy(cr);
