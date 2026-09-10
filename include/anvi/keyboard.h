@@ -20,6 +20,5 @@ void
 anvi_keyboard_destroy(struct anvi_keyboard *keyboard);
 
 bool anvi_keyboard_is_ready(const struct anvi_keyboard *keyboard);
-bool anvi_keyboard_key_was_pressed(const struct anvi_keyboard *keyboard);
 
 #endif

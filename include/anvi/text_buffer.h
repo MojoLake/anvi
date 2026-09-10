@@ -23,5 +23,6 @@ int anvi_text_buffer_backspace(struct anvi_text_buffer *text_buffer);
 int anvi_text_buffer_insert(struct anvi_text_buffer *text_buffer, const char *text, size_t byte_length);
 int anvi_text_buffer_right_arrow(struct anvi_text_buffer *tb);
 int anvi_text_buffer_left_arrow(struct anvi_text_buffer *tb);
+size_t anvi_text_buffer_word_count(struct anvi_text_buffer *tb);
 
 #endif

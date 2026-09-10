@@ -17,9 +17,16 @@
 #include <anvi/session_setup.h>
 
 
+static constexpr size_t WORDS_TO_EXIT = 5;
+
 int exit_with_failure_and_message(char* msg) {
     fprintf(stderr, "%s", msg);
     return EXIT_FAILURE;
+}
+
+bool
+exit_condition_fulfilled(struct anvi_text_buffer *tb) {
+    return anvi_text_buffer_word_count(tb) >= WORDS_TO_EXIT; 
 }
 
 
@@ -49,7 +56,7 @@ int main(void) {
             break;
         }
 
-        if (state.session_is_locked && anvi_keyboard_key_was_pressed(state.keyboard)) {
+        if (state.session_is_locked && exit_condition_fulfilled(state.text_buffer)) {
             ext_session_lock_v1_unlock_and_destroy(state.session_lock);
 
             state.session_lock = NULL;

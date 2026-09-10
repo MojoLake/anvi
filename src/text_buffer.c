@@ -1,10 +1,12 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include <grapheme.h>
 
 #include <anvi/text_buffer.h>
+#include <anvi/log.h>
 
 static size_t
 find_length_of_grapheme_to_left_of_cursor(struct anvi_text_buffer *tb) {
@@ -19,6 +21,22 @@ find_length_of_grapheme_to_left_of_cursor(struct anvi_text_buffer *tb) {
         i  += adv;
     }
     return 0; // Couldn't find the position so something went wrong.
+}
+
+size_t
+anvi_text_buffer_word_count(struct anvi_text_buffer *tb) {
+    size_t amount = 0;
+    for (size_t i = 0; i < tb->length_bytes;) {
+        const size_t adv1 = grapheme_next_word_break_utf8(tb->data + i, tb->length_bytes - i);
+        i += adv1;
+        const size_t adv2 = grapheme_next_word_break_utf8(tb->data + i, tb->length_bytes - i);
+        i  += adv2;
+        amount++;
+        // anvi_log_info("moi");
+        fprintf(stderr, "adv: %zu\n", adv1);
+    }
+    fprintf(stderr, "amount: %zu\n", amount);
+    return amount;
 }
 
 int
