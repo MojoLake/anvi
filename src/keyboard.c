@@ -1,8 +1,12 @@
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <inttypes.h>
 #include <sys/mman.h>
+#include <time.h>
+#include <sys/timerfd.h>
 
 #include <xkbcommon/xkbcommon.h>
 #include <xkbcommon/xkbcommon-keysyms.h>
@@ -217,39 +221,6 @@ static void release_or_destroy_keyboard(struct wl_keyboard* keyboard) {
     }
 }
 
-struct anvi_keyboard *anvi_keyboard_create(struct anvi_state *state, struct wl_seat *seat) {
-    struct anvi_keyboard *keyboard = calloc(1, sizeof(struct anvi_keyboard));
-
-    if (keyboard == NULL) {
-        anvi_log_error("Failed to allocate memory for keyboard struct...");
-        return NULL;
-    }
-
-    keyboard->proxy = wl_seat_get_keyboard(seat);
-
-    if (keyboard->proxy == NULL) {
-        free(keyboard);
-        return NULL;
-    }
-
-    if (wl_keyboard_add_listener(keyboard->proxy, &keyboard_listener, state)) {
-        anvi_log_error("Failed to add keyboard listener...");
-        release_or_destroy_keyboard(keyboard->proxy);        
-        free(keyboard);
-        return NULL;
-    }
-
-    keyboard->xkb_context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
-    
-    if (keyboard->xkb_context == NULL) {
-        release_or_destroy_keyboard(keyboard->proxy);
-        free(keyboard);
-        return NULL;
-    }
-
-    return keyboard;
-}
-
 
 void anvi_keyboard_destroy(struct anvi_keyboard *keyboard) {
     if (keyboard == NULL) {
@@ -267,8 +238,52 @@ void anvi_keyboard_destroy(struct anvi_keyboard *keyboard) {
     if (keyboard->xkb_context != NULL) {
         xkb_context_unref(keyboard->xkb_context);
     }
+
+    if (keyboard->repeat_timer_fd >= 0) {
+        close(keyboard->repeat_timer_fd);
+    }
+
     free(keyboard);
 }
+
+struct anvi_keyboard *anvi_keyboard_create(struct anvi_state *state, struct wl_seat *seat) {
+    struct anvi_keyboard *keyboard = calloc(1, sizeof(struct anvi_keyboard));
+
+    if (keyboard == NULL) {
+        anvi_log_error("Failed to allocate memory for keyboard struct...");
+        return NULL;
+    }
+
+    keyboard->proxy = wl_seat_get_keyboard(seat);
+
+    if (keyboard->proxy == NULL) {
+        free(keyboard);
+        return NULL;
+    }
+
+    if (wl_keyboard_add_listener(keyboard->proxy, &keyboard_listener, state)) {
+        anvi_log_error("Failed to add keyboard listener...");
+        anvi_keyboard_destroy(keyboard);
+        return NULL;
+    }
+
+    keyboard->xkb_context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+    
+    if (keyboard->xkb_context == NULL) {
+        anvi_keyboard_destroy(keyboard);
+        return NULL;
+    }
+
+    keyboard->repeat_timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC | TFD_NONBLOCK);
+
+    if (keyboard->repeat_timer_fd < 0) {
+        anvi_log_error("Failed to create keyboard repeat timer.");
+        anvi_keyboard_destroy(keyboard);
+    }
+
+    return keyboard;
+}
+
 
 bool anvi_keyboard_is_ready(const struct anvi_keyboard *keyboard) {
     if (keyboard == NULL) {

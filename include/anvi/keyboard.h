@@ -13,6 +13,8 @@ struct anvi_keyboard {
     struct xkb_keymap *xkb_keymap;
     struct xkb_state *xkb_state;
 
+    int repeat_timer_fd;
+
     int32_t repeat_rate;
     int32_t repeat_delay;
 
