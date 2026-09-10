@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <ctype.h>
 
 #include <grapheme.h>
 
@@ -26,16 +27,18 @@ find_length_of_grapheme_to_left_of_cursor(struct anvi_text_buffer *tb) {
 size_t
 anvi_text_buffer_word_count(struct anvi_text_buffer *tb) {
     size_t amount = 0;
-    for (size_t i = 0; i < tb->length_bytes;) {
-        const size_t adv1 = grapheme_next_word_break_utf8(tb->data + i, tb->length_bytes - i);
-        i += adv1;
-        const size_t adv2 = grapheme_next_word_break_utf8(tb->data + i, tb->length_bytes - i);
-        i  += adv2;
-        amount++;
-        // anvi_log_info("moi");
-        fprintf(stderr, "adv: %zu\n", adv1);
+    bool inside_word = false;
+
+    for (size_t i = 0; i < tb->length_bytes; ++i) {
+        unsigned char c = (unsigned char)tb->data[i];
+        
+        if (isspace(c)) {
+            inside_word = false;
+        } else if (!inside_word) {
+            amount++;
+            inside_word = true;
+        }
     }
-    fprintf(stderr, "amount: %zu\n", amount);
     return amount;
 }
 

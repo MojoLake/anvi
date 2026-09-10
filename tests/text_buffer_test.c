@@ -128,6 +128,40 @@ void test_insert_works_with_small_example_with_cursor_at_the_middle() {
     assert(strcmp(tb.data, "moheii") == 0);
 }
 
+void test_word_count_works_for_simple_example() {
+    struct anvi_text_buffer tb = {0};
+
+    char* text = "moi hei terve";
+    const int len = strlen(text);
+
+    initialise_text_buffer_with_text(&tb, text, len);
+    assert(anvi_text_buffer_word_count(&tb) == 3);
+}
+
+void test_word_count_works_for_simple_example_with_trailing_whitespace() {
+    struct anvi_text_buffer tb = {0};
+
+    char* text = "moi hei terve \n";
+    const int len = strlen(text);
+
+    initialise_text_buffer_with_text(&tb, text, len);
+
+    const size_t cnt = anvi_text_buffer_word_count(&tb);
+    assert(cnt == 3);
+}
+
+void test_word_count_works_for_simple_example_with_whitespace_at_the_start() {
+    struct anvi_text_buffer tb = {0};
+
+    char* text = " \n moi hei terve jea";
+    const int len = strlen(text);
+
+    initialise_text_buffer_with_text(&tb, text, len);
+
+    const size_t cnt = anvi_text_buffer_word_count(&tb);
+    assert(cnt == 4);
+}
+
 int
 main(void) {
     
@@ -140,4 +174,6 @@ main(void) {
 
     test_insert_works_with_small_example_with_cursor_at_the_end();
     test_insert_works_with_small_example_with_cursor_at_the_middle();
+    test_word_count_works_for_simple_example();
+    test_word_count_works_for_simple_example_with_trailing_whitespace();
 }
