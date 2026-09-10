@@ -253,6 +253,7 @@ struct anvi_keyboard *anvi_keyboard_create(struct anvi_state *state, struct wl_s
         anvi_log_error("Failed to allocate memory for keyboard struct...");
         return NULL;
     }
+    keyboard->repeat_timer_fd = -1; // Because calloc might initialise it as 0 which is interpreted as a valid file descriptor.
 
     keyboard->proxy = wl_seat_get_keyboard(seat);
 
