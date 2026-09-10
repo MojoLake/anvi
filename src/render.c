@@ -9,6 +9,24 @@
 #include <anvi/output.h>
 #include <anvi/buffer.h>
 
+static constexpr size_t MARGIN_WDITH = 50;
+static constexpr size_t PADDING_TOP = 40;
+
+static void
+draw_cursor(struct anvi_state *state, cairo_t *cr, PangoLayout *layout) {
+
+    PangoRectangle pos;
+    pango_layout_get_cursor_pos(layout, state->text_buffer->cursor_bytes, &pos, NULL);
+
+    const double x = MARGIN_WDITH + pos.x / (double)PANGO_SCALE;
+    const double y = PADDING_TOP + pos.y / (double)PANGO_SCALE;
+    const double h = pos.height / (double)PANGO_SCALE;
+
+    cairo_move_to(cr, x, y);
+    cairo_line_to(cr, x, y + h);
+    cairo_stroke(cr);
+}
+
 static void
 render_text_to_buffer(struct anvi_state *state, struct anvi_output *output, struct anvi_buffer *buffer) {
 
@@ -24,29 +42,17 @@ render_text_to_buffer(struct anvi_state *state, struct anvi_output *output, stru
     PangoFontDescription *font = pango_font_description_from_string("Sans 16");
     pango_layout_set_font_description(layout, font);
 
-    const size_t margin_width = 50;
-    const size_t top_padding = 40;
-
-    pango_layout_set_width(layout, (output->width - 2 * margin_width) * PANGO_SCALE);
+    pango_layout_set_width(layout, (output->width - 2 * MARGIN_WDITH) * PANGO_SCALE);
 
     pango_layout_set_wrap(layout, PANGO_WRAP_WORD_CHAR);
 
     anvi_log_info("Rendering text to buffer...\n");
     cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-    cairo_move_to(cr, margin_width, top_padding);
+    cairo_move_to(cr, MARGIN_WDITH, PADDING_TOP);
 
     pango_cairo_show_layout(cr, layout);
-
-    PangoRectangle pos;
-    pango_layout_get_cursor_pos(layout, state->text_buffer->cursor_bytes, &pos, NULL);
-
-    const double x = margin_width + pos.x / (double)PANGO_SCALE;
-    const double y = top_padding + pos.y / (double)PANGO_SCALE;
-    const double h = pos.height / (double)PANGO_SCALE;
-
-    cairo_move_to(cr, x, y);
-    cairo_line_to(cr, x, y + h);
-    cairo_stroke(cr);
+    
+    draw_cursor(state, cr, layout);
 
     pango_font_description_free(font);
     g_object_unref(layout);
