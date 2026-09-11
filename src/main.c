@@ -69,10 +69,7 @@ int main(void) {
                 .events = POLLIN,
             },
         };
-        // if (wl_display_dispatch(state.display) < 0) {
-        //     anvi_log_error("Wayland event dispatch failed...");
-        //     break;
-        // }
+
         const int result = poll(fds, 2, -1);
         anvi_log_info("Result: %d", result);
 
