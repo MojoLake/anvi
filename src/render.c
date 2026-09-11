@@ -34,11 +34,11 @@ draw_word_counter(struct anvi_state *state, cairo_t *cr, PangoLayout *layout) {
 
     // switch to using the word count as a character!!
     char text[11];
-    sprintf(text, "%ld", wc);
+    sprintf(text, "%ld / %ld", wc, WORDS_TO_EXIT);
     pango_layout_set_text(layout, text, -1);
 
     cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-    cairo_move_to(cr, 0, 0);
+    cairo_move_to(cr, 10, 10);
     pango_cairo_show_layout(cr, layout);
 }
 

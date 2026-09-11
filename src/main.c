@@ -18,8 +18,6 @@
 #include <anvi/session_setup.h>
 
 
-static constexpr size_t WORDS_TO_EXIT = 5;
-
 int exit_with_failure_and_message(char* msg) {
     fprintf(stderr, "%s", msg);
     return EXIT_FAILURE;

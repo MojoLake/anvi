@@ -28,4 +28,5 @@ struct anvi_state {
     bool session_is_finished;
 };
 
+constexpr size_t WORDS_TO_EXIT = 5;
 #endif
