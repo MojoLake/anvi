@@ -8,6 +8,7 @@
 #include <anvi/log.h>
 #include <anvi/output.h>
 #include <anvi/buffer.h>
+#include <anvi/text_buffer.h>
 
 static constexpr size_t MARGIN_WDITH = 50;
 static constexpr size_t PADDING_TOP = 40;
@@ -28,7 +29,29 @@ draw_cursor(struct anvi_state *state, cairo_t *cr, PangoLayout *layout) {
 }
 
 static void
-render_text_to_buffer(struct anvi_state *state, struct anvi_output *output, struct anvi_buffer *buffer) {
+draw_word_counter(struct anvi_state *state, cairo_t *cr, PangoLayout *layout) {
+    const size_t wc = anvi_text_buffer_word_count(state->text_buffer); 
+
+    // switch to using the word count as a character!!
+    char text[11];
+    sprintf(text, "%ld", wc);
+    pango_layout_set_text(layout, text, -1);
+
+    cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+    cairo_move_to(cr, 0, 0);
+    pango_cairo_show_layout(cr, layout);
+}
+
+static void
+setup_pango_layout(struct anvi_output *output, PangoLayout *layout, PangoFontDescription *font) {
+
+    pango_layout_set_font_description(layout, font);
+    pango_layout_set_width(layout, (output->width - 2 * MARGIN_WDITH) * PANGO_SCALE);
+    pango_layout_set_wrap(layout, PANGO_WRAP_WORD_CHAR);
+}
+
+static void
+render_to_buffer(struct anvi_state *state, struct anvi_output *output, struct anvi_buffer *buffer) {
 
     // Clear the buffer.
     memset(buffer->data, 0, buffer->size);
@@ -38,27 +61,23 @@ render_text_to_buffer(struct anvi_state *state, struct anvi_output *output, stru
     PangoLayout *layout = pango_cairo_create_layout(cr);
 
     pango_layout_set_text(layout, state->text_buffer->data, -1);
-
     PangoFontDescription *font = pango_font_description_from_string("Sans 16");
-    pango_layout_set_font_description(layout, font);
 
-    pango_layout_set_width(layout, (output->width - 2 * MARGIN_WDITH) * PANGO_SCALE);
+    setup_pango_layout(output, layout, font);
 
-    pango_layout_set_wrap(layout, PANGO_WRAP_WORD_CHAR);
-
-    anvi_log_info("Rendering text to buffer...\n");
     cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
     cairo_move_to(cr, MARGIN_WDITH, PADDING_TOP);
-
     pango_cairo_show_layout(cr, layout);
     
     draw_cursor(state, cr, layout);
+    draw_word_counter(state, cr, layout);
 
     pango_font_description_free(font);
     g_object_unref(layout);
     cairo_destroy(cr);
     cairo_surface_flush(buffer->cairo_surface);
 }
+
 
 void
 draw_screen(struct anvi_state *state, struct anvi_output *output) {
@@ -69,7 +88,7 @@ draw_screen(struct anvi_state *state, struct anvi_output *output) {
         return;
     }
     free_buffer->busy = true;
-    render_text_to_buffer(state, output, free_buffer);
+    render_to_buffer(state, output, free_buffer);
     present_buffer(output, free_buffer->proxy);
 }
 
