@@ -71,7 +71,10 @@ int main(void) {
         };
 
         const int result = poll(fds, 2, -1);
-        anvi_log_info("Result: %d", result);
+        if (result == -1) {
+            anvi_log_error("Something went wrong when polling for events and timers.");
+            return EXIT_FAILURE;
+        }
 
         if (fds[0].revents & POLLIN) {
             wl_display_read_events(state.display);
