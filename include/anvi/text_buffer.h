@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-constexpr uint32_t TEXT_BUFFER_SIZE = 2048; // Can be increased by a lot I think
+constexpr uint32_t TEXT_BUFFER_SIZE = 8192;
 
 enum anvi_cursor_direction {
     ANVI_CURSOR_LEFT = -1,
