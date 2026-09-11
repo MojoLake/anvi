@@ -13,6 +13,7 @@ struct anvi_output;
 enum anvi_phase {
     ANVI_START_CONFIGURATION_PHASE = 1,
     ANVI_NORMAL_PHASE = 2,
+    ANVI_FINISHED_PHASE = 3,
 };
 
 struct anvi_state {
