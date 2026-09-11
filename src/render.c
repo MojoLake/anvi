@@ -33,8 +33,8 @@ draw_word_counter(struct anvi_state *state, cairo_t *cr, PangoLayout *layout) {
     const size_t wc = anvi_text_buffer_word_count(state->text_buffer); 
 
     // switch to using the word count as a character!!
-    char text[11];
-    sprintf(text, "%ld / %ld", wc, WORDS_TO_EXIT);
+    char text[15];
+    sprintf(text, "%ld / %ld", wc, state->words_to_exit);
     pango_layout_set_text(layout, text, -1);
 
     cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
@@ -60,20 +60,41 @@ render_to_buffer(struct anvi_state *state, struct anvi_output *output, struct an
 
     PangoLayout *layout = pango_cairo_create_layout(cr);
 
-    pango_layout_set_text(layout, state->text_buffer->data, -1);
     PangoFontDescription *font = pango_font_description_from_string("Sans 16");
 
-    setup_pango_layout(output, layout, font);
+    if (state->phase == ANVI_NORMAL_PHASE) {
+        pango_layout_set_text(layout, state->text_buffer->data, -1);
+        setup_pango_layout(output, layout, font);
 
-    cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-    cairo_move_to(cr, MARGIN_WDITH, PADDING_TOP);
-    pango_cairo_show_layout(cr, layout);
+        cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+        cairo_move_to(cr, MARGIN_WDITH, PADDING_TOP);
+        pango_cairo_show_layout(cr, layout);
+        draw_cursor(state, cr, layout);
+        draw_word_counter(state, cr, layout);
+
+        pango_font_description_free(font);
+        g_object_unref(layout);
+    } else if (state->phase == ANVI_START_CONFIGURATION_PHASE) {
+        char text_prompt[] = "Enter how many words you must before unlocking, or q to quit: "; 
+        // char *combined_text = calloc(strlen(text_prompt) + state->text_buffer->length_bytes + 1, sizeof(char));
+        constexpr size_t MAX_COMBINED_LEN = 256; // can never be longer than this
+        char combined_text[MAX_COMBINED_LEN];
+
+        strcpy(combined_text, text_prompt);
+        strcpy(combined_text + strlen(text_prompt), state->text_buffer->data);
+
+        pango_layout_set_text(layout, combined_text, -1);
+        setup_pango_layout(output, layout, font);
+
+        cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+        cairo_move_to(cr, 10, 10);
+        pango_cairo_show_layout(cr, layout);
+
+        pango_font_description_free(font);
+        g_object_unref(layout);
+    }
     
-    draw_cursor(state, cr, layout);
-    draw_word_counter(state, cr, layout);
 
-    pango_font_description_free(font);
-    g_object_unref(layout);
     cairo_destroy(cr);
     cairo_surface_flush(buffer->cairo_surface);
 }

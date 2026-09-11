@@ -24,10 +24,11 @@ int exit_with_failure_and_message(char* msg) {
 }
 
 bool
-exit_condition_fulfilled(struct anvi_text_buffer *tb) {
-    if (anvi_text_buffer_word_count(tb) >= WORDS_TO_EXIT) {
+exit_condition_fulfilled(struct anvi_state *state) {
+    if (anvi_text_buffer_word_count(state->text_buffer) >= state->words_to_exit) {
         return true;
     }
+    struct anvi_text_buffer *tb = state->text_buffer;
     if (tb->length_bytes < 2) return false;
     for (size_t i = 0; i < tb->length_bytes - 2; ++i) {
         if (tb->data[i] == '1' && tb->data[i + 1] == '2' && tb->data[i + 2] == '3') {
@@ -37,6 +38,15 @@ exit_condition_fulfilled(struct anvi_text_buffer *tb) {
     return false;
 }
 
+bool
+start_phase_exit_condtion_fulfilled(struct anvi_text_buffer *tb) {
+    for (size_t i = 0; i < tb->length_bytes; ++i) {
+        if (tb->data[i] == 'q') {
+            return true;
+        }
+    }
+    return false;
+}
 
 int main(void) {
 
@@ -96,13 +106,24 @@ int main(void) {
             break;
         }
 
-        if (state.session_is_locked && exit_condition_fulfilled(state.text_buffer)) {
-            ext_session_lock_v1_unlock_and_destroy(state.session_lock);
+        if (state.phase == ANVI_NORMAL_PHASE) {
+            if (state.session_is_locked && exit_condition_fulfilled(&state)) {
+                ext_session_lock_v1_unlock_and_destroy(state.session_lock);
 
-            state.session_lock = NULL;
+                state.session_lock = NULL;
 
-            wl_display_roundtrip(state.display);
-            break;
+                wl_display_roundtrip(state.display);
+                break;
+            }
+        } else if (state.phase == ANVI_START_CONFIGURATION_PHASE) {
+            if (state.session_is_locked && start_phase_exit_condtion_fulfilled(state.text_buffer)) {
+                ext_session_lock_v1_unlock_and_destroy(state.session_lock);
+
+                state.session_lock = NULL;
+
+                wl_display_roundtrip(state.display);
+                break;
+            }
         }
     }
 

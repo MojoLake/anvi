@@ -323,5 +323,7 @@ setup_initial_state(struct anvi_state *state) {
 
     add_surface_frame_listeners_for_outputs(state);
 
+    state->phase = ANVI_START_CONFIGURATION_PHASE;
+
     return EXIT_SUCCESS;
 }

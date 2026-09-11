@@ -95,6 +95,30 @@ static void leave(void *data,
     anvi_log_info("Serial: %" PRIu32 "\n", serial);
 }
 
+static int
+number_in_text_buffer(struct anvi_text_buffer *tb) {
+    if (tb->length_bytes > 7) {
+        return -1; // No user wants to type a million characters...
+    }
+    int ret = 0;
+    for (size_t i = 0; i < tb->length_bytes; ++i) {
+        ret *= 10;
+        if (tb->data[i] < '0' || tb->data[i] > '9') {
+            return -1;
+        }
+        ret += tb->data[i] - '0';
+    }
+    return ret;
+}
+
+void
+reset_text_buffer(struct anvi_text_buffer *tb) {
+    for (size_t i = 0; i < tb->length_bytes; ++i) {
+        tb->data[i] = '\0';
+    }
+    tb->length_bytes = 0;
+    tb->cursor_bytes = 0;
+}
 
 bool check_and_handle_special_keys(struct anvi_state *state, xkb_keysym_t keysym) {
 
@@ -109,7 +133,20 @@ bool check_and_handle_special_keys(struct anvi_state *state, xkb_keysym_t keysym
             anvi_text_buffer_backspace(state->text_buffer);
             return true;
         case XKB_KEY_Return:
-            anvi_text_buffer_insert(state->text_buffer, "\n", 1);
+            if (state->phase == ANVI_NORMAL_PHASE) {
+                anvi_text_buffer_insert(state->text_buffer, "\n", 1);
+            } else if (state->phase == ANVI_START_CONFIGURATION_PHASE) {
+                const int x = number_in_text_buffer(state->text_buffer);
+                if (x == -1) {
+                    // We should somehow make an error but let's just return true
+                    reset_text_buffer(state->text_buffer);
+                    return true;
+                } else {
+                    state->words_to_exit = x;
+                    state->phase = ANVI_NORMAL_PHASE;
+                    reset_text_buffer(state->text_buffer);
+                }
+            }
             return true;
     }
     return false;
