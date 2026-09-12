@@ -78,8 +78,9 @@ handle_start_configuration_phase_exit_check(struct anvi_state *state) {
 int
 handle_normal_phase_exit_check(struct anvi_state *state) {
     if (normal_phase_exit_condition_fulfilled(state)) {
-        safe_unlock_and_destroy_session_lock(state);
-        return 1;
+        // safe_unlock_and_destroy_session_lock(state);
+        state->phase = ANVI_FINISHED_PHASE;
+        return 0;
     }
     return 0;
 }
