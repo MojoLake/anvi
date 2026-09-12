@@ -14,19 +14,24 @@ static constexpr size_t MARGIN_WDITH = 50;
 static constexpr size_t PADDING_TOP = 40;
 
 static void
-draw_cursor(struct anvi_state *state, cairo_t *cr, PangoLayout *layout) {
-
-    PangoRectangle pos;
-    pango_layout_get_cursor_pos(layout, state->text_buffer->cursor_bytes, &pos, NULL);
-
-    const double x = MARGIN_WDITH + pos.x / (double)PANGO_SCALE;
-    const double y = PADDING_TOP + pos.y / (double)PANGO_SCALE;
-    const double h = pos.height / (double)PANGO_SCALE;
-
+draw_cursor_at_pos_with_height(double x, double y, double h, cairo_t *cr) {
     cairo_move_to(cr, x, y);
     cairo_line_to(cr, x, y + h);
     cairo_stroke(cr);
 }
+
+static void
+draw_cursor(size_t cursor_bytes, cairo_t *cr, PangoLayout *layout, size_t dx, size_t dy) {
+
+    PangoRectangle pos;
+    pango_layout_get_cursor_pos(layout, cursor_bytes, &pos, NULL);
+
+    const double x = dx + pos.x / (double)PANGO_SCALE;
+    const double y = dy + pos.y / (double)PANGO_SCALE;
+    const double h = pos.height / (double)PANGO_SCALE;
+    draw_cursor_at_pos_with_height(x, y, h, cr);
+}
+
 
 static void
 draw_text_starting_at(cairo_t *cr, PangoLayout *layout, char* text, const size_t x, const size_t y) {
@@ -55,6 +60,26 @@ setup_pango_layout(struct anvi_output *output, PangoLayout *layout) {
 }
 
 
+static void
+draw_start_configuration_phase(struct anvi_state *state, cairo_t *cr) {
+
+    char text_prompt[] = "Enter how many words you must before unlocking, or q to quit: "; 
+    constexpr size_t MAX_COMBINED_LEN = 256; // Our prompt + user typed word count can never be longer than this.
+    char combined_text[MAX_COMBINED_LEN];
+
+    strcpy(combined_text, text_prompt);
+    strcpy(combined_text + strlen(text_prompt), state->text_buffer->data);
+
+    draw_text_starting_at(cr, state->layout, combined_text, 10, 10);
+    draw_cursor(strlen(text_prompt) + state->text_buffer->cursor_bytes, cr, state->layout, 10, 10);
+}
+
+static void
+draw_normal_phase(struct anvi_state *state, cairo_t *cr) {
+    draw_text_starting_at(cr, state->layout, state->text_buffer->data, MARGIN_WDITH, PADDING_TOP);
+    draw_cursor(state->text_buffer->cursor_bytes, cr, state->layout, MARGIN_WDITH, PADDING_TOP);
+    draw_word_counter(state, cr, state->layout);
+}
 
 static void
 render_to_buffer(struct anvi_state *state, struct anvi_output *output, struct anvi_buffer *buffer) {
@@ -74,20 +99,15 @@ render_to_buffer(struct anvi_state *state, struct anvi_output *output, struct an
     }
     setup_pango_layout(output, state->layout);
 
-    if (state->phase == ANVI_NORMAL_PHASE) {
-        draw_text_starting_at(cr, state->layout, state->text_buffer->data, MARGIN_WDITH, PADDING_TOP);
-        draw_cursor(state, cr, state->layout);
-        draw_word_counter(state, cr, state->layout);
-
-    } else if (state->phase == ANVI_START_CONFIGURATION_PHASE) {
-        char text_prompt[] = "Enter how many words you must before unlocking, or q to quit: "; 
-        constexpr size_t MAX_COMBINED_LEN = 256; // can never be longer than this
-        char combined_text[MAX_COMBINED_LEN];
-
-        strcpy(combined_text, text_prompt);
-        strcpy(combined_text + strlen(text_prompt), state->text_buffer->data);
-
-        draw_text_starting_at(cr, state->layout, combined_text, 10, 10);
+    switch (state->phase) {
+        case ANVI_START_CONFIGURATION_PHASE:
+            draw_start_configuration_phase(state, cr);
+            break;
+        case ANVI_NORMAL_PHASE:
+            draw_normal_phase(state, cr);
+            break;
+        case ANVI_FINISHED_PHASE:
+            break;
     }
     
     cairo_destroy(cr);
