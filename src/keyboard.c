@@ -120,6 +120,30 @@ reset_text_buffer(struct anvi_text_buffer *tb) {
     tb->cursor_bytes = 0;
 }
 
+static void
+handle_return(struct anvi_state *state) {
+    switch (state->phase) {
+        case ANVI_START_CONFIGURATION_PHASE:
+            const int x = number_in_text_buffer(state->text_buffer);
+            if (x == -1) {
+                state->start_phase_include_invalid_input_text = true;
+                reset_text_buffer(state->text_buffer);
+            } else {
+                state->words_to_exit = x;
+                // I'm not convinced that it's a good idea to have the phase switch here...
+                state->phase = ANVI_NORMAL_PHASE;
+                reset_text_buffer(state->text_buffer);
+            }
+            break;
+        case ANVI_NORMAL_PHASE:
+            anvi_text_buffer_insert(state->text_buffer, "\n", 1);
+            break;
+        case ANVI_FINISHED_PHASE:
+            // No-op I guess
+            break;
+    }
+}
+
 bool check_and_handle_special_keys(struct anvi_state *state, xkb_keysym_t keysym) {
 
     switch (keysym) {
@@ -133,20 +157,7 @@ bool check_and_handle_special_keys(struct anvi_state *state, xkb_keysym_t keysym
             anvi_text_buffer_backspace(state->text_buffer);
             return true;
         case XKB_KEY_Return:
-            if (state->phase == ANVI_NORMAL_PHASE) {
-                anvi_text_buffer_insert(state->text_buffer, "\n", 1);
-            } else if (state->phase == ANVI_START_CONFIGURATION_PHASE) {
-                const int x = number_in_text_buffer(state->text_buffer);
-                if (x == -1) {
-                    // We should somehow make an error but let's just return true
-                    reset_text_buffer(state->text_buffer);
-                    return true;
-                } else {
-                    state->words_to_exit = x;
-                    state->phase = ANVI_NORMAL_PHASE;
-                    reset_text_buffer(state->text_buffer);
-                }
-            }
+            handle_return(state);
             return true;
     }
     return false;
