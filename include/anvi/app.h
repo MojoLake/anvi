@@ -1,6 +1,8 @@
 #ifndef APP_H
 #define APP_H
 
+#include <pango/pangocairo.h>
+
 #include <wayland-client.h>
 
 #include "ext-session-lock-v1-client-protocol.h"
@@ -28,6 +30,8 @@ struct anvi_state {
     struct anvi_keyboard *keyboard;
 
     struct anvi_text_buffer *text_buffer;
+
+    PangoLayout *layout;
 
     enum anvi_phase phase;
 

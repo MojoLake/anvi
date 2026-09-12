@@ -48,9 +48,8 @@ draw_word_counter(struct anvi_state *state, cairo_t *cr, PangoLayout *layout) {
 }
 
 static void
-setup_pango_layout(struct anvi_output *output, PangoLayout *layout, PangoFontDescription *font) {
+setup_pango_layout(struct anvi_output *output, PangoLayout *layout) {
 
-    pango_layout_set_font_description(layout, font);
     pango_layout_set_width(layout, (output->width - 2 * MARGIN_WDITH) * PANGO_SCALE);
     pango_layout_set_wrap(layout, PANGO_WRAP_WORD_CHAR);
 }
@@ -65,14 +64,20 @@ render_to_buffer(struct anvi_state *state, struct anvi_output *output, struct an
 
     cairo_t *cr = cairo_create(buffer->cairo_surface);
 
-    PangoLayout *layout = pango_cairo_create_layout(cr); // TODO: reuse layout across frames
-    PangoFontDescription *font = pango_font_description_from_string("Sans 16"); // TODO: reuse across frames
-    setup_pango_layout(output, layout, font);
+    if (state->layout == NULL) {
+        state->layout = pango_cairo_create_layout(cr);
+        PangoFontDescription *font = pango_font_description_from_string("Sans 16");
+        pango_layout_set_font_description(state->layout, font);
+        pango_font_description_free(font);
+    } else {
+        pango_cairo_update_layout(cr, state->layout);
+    }
+    setup_pango_layout(output, state->layout);
 
     if (state->phase == ANVI_NORMAL_PHASE) {
-        draw_text_starting_at(cr, layout, state->text_buffer->data, MARGIN_WDITH, PADDING_TOP);
-        draw_cursor(state, cr, layout);
-        draw_word_counter(state, cr, layout);
+        draw_text_starting_at(cr, state->layout, state->text_buffer->data, MARGIN_WDITH, PADDING_TOP);
+        draw_cursor(state, cr, state->layout);
+        draw_word_counter(state, cr, state->layout);
 
     } else if (state->phase == ANVI_START_CONFIGURATION_PHASE) {
         char text_prompt[] = "Enter how many words you must before unlocking, or q to quit: "; 
@@ -82,12 +87,9 @@ render_to_buffer(struct anvi_state *state, struct anvi_output *output, struct an
         strcpy(combined_text, text_prompt);
         strcpy(combined_text + strlen(text_prompt), state->text_buffer->data);
 
-        draw_text_starting_at(cr, layout, combined_text, 10, 10);
+        draw_text_starting_at(cr, state->layout, combined_text, 10, 10);
     }
     
-    pango_font_description_free(font);
-    g_object_unref(layout);
-
     cairo_destroy(cr);
     cairo_surface_flush(buffer->cairo_surface);
 }
