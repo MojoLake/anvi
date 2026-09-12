@@ -86,6 +86,15 @@ handle_normal_phase_exit_check(struct anvi_state *state) {
     return 0;
 }
 
+int
+handle_finish_phase_exit_check(struct anvi_state *state) {
+    if (state->user_wants_to_quit) {
+        safe_unlock_and_destroy_session_lock(state);
+        return 1;
+    }
+    return 0;
+}
+
 
 int main(void) {
 
@@ -149,6 +158,7 @@ int main(void) {
                 should_break = handle_normal_phase_exit_check(&state);
                 break;
             case ANVI_FINISHED_PHASE:
+                should_break = handle_finish_phase_exit_check(&state);
                 break;
         }
 

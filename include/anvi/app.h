@@ -35,6 +35,7 @@ struct anvi_state {
 
     enum anvi_phase phase;
     bool start_phase_include_invalid_input_text;
+    bool user_wants_to_quit;
 
     size_t words_to_exit;
 

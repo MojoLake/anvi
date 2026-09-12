@@ -142,6 +142,17 @@ handle_return(struct anvi_state *state) {
             break;
         case ANVI_FINISHED_PHASE:
             // No-op I guess
+            const int y = number_in_text_buffer(state->text_buffer);
+            if (y == -1) {
+                // For now exit at any non-number input
+                state->user_wants_to_quit = true;
+            } else {
+                state->words_to_exit = y;
+                state->phase = ANVI_NORMAL_PHASE;
+                reset_text_buffer(state->text_buffer);
+                // We need to somehow have the old text-buffer stored.
+                // We definitely should have separate text-buffers for the different stages?
+            }
             break;
     }
 }
