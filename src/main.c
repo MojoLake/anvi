@@ -80,6 +80,7 @@ handle_normal_phase_exit_check(struct anvi_state *state) {
     if (normal_phase_exit_condition_fulfilled(state)) {
         // safe_unlock_and_destroy_session_lock(state);
         state->phase = ANVI_FINISHED_PHASE;
+        reset_text_buffer(state->text_buffer);
         return 0;
     }
     return 0;

@@ -8,6 +8,7 @@
 struct wl_seat;
 struct anvi_state;
 struct anvi_keyboard;
+struct anvi_text_buffer;
 
 struct anvi_keyboard {
     struct wl_keyboard *proxy;
@@ -33,5 +34,6 @@ anvi_keyboard_destroy(struct anvi_keyboard *keyboard);
 
 bool anvi_keyboard_is_ready(const struct anvi_keyboard *keyboard);
 void handle_timer(struct anvi_state *state);
+void reset_text_buffer(struct anvi_text_buffer *tb);
 
 #endif
