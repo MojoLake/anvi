@@ -67,7 +67,7 @@ typedef struct {
 
 static string_combined
 construct_configuration_phase_text(struct anvi_state *state) {
-    char text_prompt[] = "Enter how many words you must before unlocking, or q to quit: "; 
+    char text_prompt[] = "Enter how many words you must type before unlocking, or q to quit: "; 
 
     string_combined result;
     result.prompt_text_length = strlen(text_prompt);
