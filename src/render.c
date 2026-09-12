@@ -63,13 +63,13 @@ static constexpr size_t MAX_COMBINED_LEN = 256; // Our prompt + user typed word 
 typedef struct {
     char data[MAX_COMBINED_LEN];
     size_t prompt_text_length;
-} string_combined;
+} start_string_combined;
 
-static string_combined
-construct_configuration_phase_text(struct anvi_state *state) {
+static start_string_combined
+construct_start_configuration_phase_text(struct anvi_state *state) {
     char text_prompt[] = "Enter how many words you must type before unlocking, or q to quit: "; 
 
-    string_combined result;
+    start_string_combined result;
     result.prompt_text_length = strlen(text_prompt);
 
     const size_t available = MAX_COMBINED_LEN - strlen(text_prompt) - 1;
@@ -98,10 +98,42 @@ construct_configuration_phase_text(struct anvi_state *state) {
     return result;
 }
 
+constexpr size_t MAX_FINISH_TEXT_COMBINED_LEN = 256;
+typedef struct {
+    char data[MAX_FINISH_TEXT_COMBINED_LEN];
+} finish_string_combined;
+
+static finish_string_combined
+construct_finish_phase_text(struct anvi_state *state) {
+
+    char congrats_prompt_start[] = "Congratulations, you wrote ";
+    char congrats_prompt_end[] = " words!\n";
+    char instruction_prompt[] = "Type q to quit, or a new word count to continue: ";
+
+    finish_string_combined result;
+
+    const size_t space_left_for_text_buffer_data = MAX_FINISH_TEXT_COMBINED_LEN - sizeof(congrats_prompt_start) - sizeof(congrats_prompt_end) - sizeof(instruction_prompt) - 10;
+
+    snprintf(
+        result.data,
+        MAX_FINISH_TEXT_COMBINED_LEN,
+        "%s%zu%s%s%.*s",
+        congrats_prompt_start,
+        state->words_to_exit,
+        congrats_prompt_end,
+        instruction_prompt,
+        (int)space_left_for_text_buffer_data,
+        state->text_buffer->data
+    );
+
+    return result;
+}
+
+
 static void
 draw_start_configuration_phase(struct anvi_state *state, cairo_t *cr) {
 
-    string_combined combined = construct_configuration_phase_text(state);
+    start_string_combined combined = construct_start_configuration_phase_text(state);
 
     draw_text_starting_at(cr, state->layout, combined.data, 10, 10);
     draw_cursor(combined.prompt_text_length + state->text_buffer->cursor_bytes, cr, state->layout, 10, 10);
@@ -112,6 +144,12 @@ draw_normal_phase(struct anvi_state *state, cairo_t *cr) {
     draw_text_starting_at(cr, state->layout, state->text_buffer->data, MARGIN_WDITH, PADDING_TOP);
     draw_cursor(state->text_buffer->cursor_bytes, cr, state->layout, MARGIN_WDITH, PADDING_TOP);
     draw_word_counter(state, cr, state->layout);
+}
+
+static void
+draw_finish_phase(struct anvi_state *state, cairo_t *cr) {
+    finish_string_combined combined = construct_finish_phase_text(state);
+    draw_text_starting_at(cr, state->layout, combined.data, 10, 10);
 }
 
 static void
@@ -145,6 +183,7 @@ render_to_buffer(struct anvi_state *state, struct anvi_output *output, struct an
             draw_normal_phase(state, cr);
             break;
         case ANVI_FINISHED_PHASE:
+            draw_finish_phase(state, cr);
             break;
     }
     
