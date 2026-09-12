@@ -134,12 +134,7 @@ int main(void) {
         }
 
         if (state.session_is_finished) {
-            if (state.session_is_locked) {
-                ext_session_lock_v1_unlock_and_destroy(state.session_lock);
-            } else {
-                ext_session_lock_v1_destroy(state.session_lock);
-            }
-            state.session_lock = NULL;
+            safe_unlock_and_destroy_session_lock(&state);
             break;
         }
 
