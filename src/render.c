@@ -82,6 +82,19 @@ construct_configuration_phase_text(struct anvi_state *state) {
         state->text_buffer->data
     );
 
+    if (state->start_phase_include_invalid_input_text) {
+        // TODO: put the actual max number.
+        char invalid_text_warning[] = "\nPlease enter an integer between 1 and 999999.";
+        const size_t used = strlen(result.data);
+        const size_t remaining = MAX_COMBINED_LEN - used;
+        snprintf(
+            result.data + used,
+            remaining,
+            "%s",
+            invalid_text_warning
+        );
+    } 
+
     return result;
 }
 
