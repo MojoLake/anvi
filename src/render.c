@@ -59,19 +59,39 @@ setup_pango_layout_for_current_output(struct anvi_output *output, PangoLayout *l
     pango_layout_set_wrap(layout, PANGO_WRAP_WORD_CHAR);
 }
 
+static constexpr size_t MAX_COMBINED_LEN = 256; // Our prompt + user typed word count can never be longer than this.
+typedef struct {
+    char data[MAX_COMBINED_LEN];
+    size_t prompt_text_length;
+} string_combined;
+
+static string_combined
+construct_configuration_phase_text(struct anvi_state *state) {
+    char text_prompt[] = "Enter how many words you must before unlocking, or q to quit: "; 
+
+    string_combined result;
+    result.prompt_text_length = strlen(text_prompt);
+
+    const size_t available = MAX_COMBINED_LEN - strlen(text_prompt) - 1;
+    snprintf(
+        result.data,
+        MAX_COMBINED_LEN,
+        "%s%.*s",
+        text_prompt,
+        (int)available,
+        state->text_buffer->data
+    );
+
+    return result;
+}
 
 static void
 draw_start_configuration_phase(struct anvi_state *state, cairo_t *cr) {
 
-    char text_prompt[] = "Enter how many words you must before unlocking, or q to quit: "; 
-    constexpr size_t MAX_COMBINED_LEN = 256; // Our prompt + user typed word count can never be longer than this.
-    char combined_text[MAX_COMBINED_LEN];
+    string_combined combined = construct_configuration_phase_text(state);
 
-    strcpy(combined_text, text_prompt);
-    strcpy(combined_text + strlen(text_prompt), state->text_buffer->data);
-
-    draw_text_starting_at(cr, state->layout, combined_text, 10, 10);
-    draw_cursor(strlen(text_prompt) + state->text_buffer->cursor_bytes, cr, state->layout, 10, 10);
+    draw_text_starting_at(cr, state->layout, combined.data, 10, 10);
+    draw_cursor(combined.prompt_text_length + state->text_buffer->cursor_bytes, cr, state->layout, 10, 10);
 }
 
 static void
