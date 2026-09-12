@@ -53,7 +53,7 @@ draw_word_counter(struct anvi_state *state, cairo_t *cr, PangoLayout *layout) {
 }
 
 static void
-setup_pango_layout(struct anvi_output *output, PangoLayout *layout) {
+setup_pango_layout_for_current_output(struct anvi_output *output, PangoLayout *layout) {
 
     pango_layout_set_width(layout, (output->width - 2 * MARGIN_WDITH) * PANGO_SCALE);
     pango_layout_set_wrap(layout, PANGO_WRAP_WORD_CHAR);
@@ -82,13 +82,7 @@ draw_normal_phase(struct anvi_state *state, cairo_t *cr) {
 }
 
 static void
-render_to_buffer(struct anvi_state *state, struct anvi_output *output, struct anvi_buffer *buffer) {
-
-    // Clear the buffer.
-    memset(buffer->data, 0, buffer->size);
-
-    cairo_t *cr = cairo_create(buffer->cairo_surface);
-
+create_or_update_pango_layout(struct anvi_state *state, cairo_t *cr) {
     if (state->layout == NULL) {
         state->layout = pango_cairo_create_layout(cr);
         PangoFontDescription *font = pango_font_description_from_string("Sans 16");
@@ -97,7 +91,18 @@ render_to_buffer(struct anvi_state *state, struct anvi_output *output, struct an
     } else {
         pango_cairo_update_layout(cr, state->layout);
     }
-    setup_pango_layout(output, state->layout);
+}
+
+static void
+render_to_buffer(struct anvi_state *state, struct anvi_output *output, struct anvi_buffer *buffer) {
+
+    // Clear the buffer.
+    memset(buffer->data, 0, buffer->size);
+
+    cairo_t *cr = cairo_create(buffer->cairo_surface);
+
+    create_or_update_pango_layout(state, cr);
+    setup_pango_layout_for_current_output(output, state->layout);
 
     switch (state->phase) {
         case ANVI_START_CONFIGURATION_PHASE:
