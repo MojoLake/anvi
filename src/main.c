@@ -24,7 +24,7 @@ int exit_with_failure_and_message(char* msg) {
 }
 
 bool
-exit_condition_fulfilled(struct anvi_state *state) {
+normal_phase_exit_condition_fulfilled(struct anvi_state *state) {
     if (anvi_text_buffer_word_count(state->text_buffer) >= state->words_to_exit) {
         return true;
     }
@@ -39,7 +39,8 @@ exit_condition_fulfilled(struct anvi_state *state) {
 }
 
 bool
-start_phase_exit_condtion_fulfilled(struct anvi_text_buffer *tb) {
+start_phase_exit_condtion_fulfilled(struct anvi_state *state) {
+    struct anvi_text_buffer *tb = state->text_buffer;
     for (size_t i = 0; i < tb->length_bytes; ++i) {
         if (tb->data[i] == 'q') {
             return true;
@@ -49,9 +50,40 @@ start_phase_exit_condtion_fulfilled(struct anvi_text_buffer *tb) {
 }
 
 bool
-end_phase_exit_condition_fulfilled(struct anvi_text_buffer *tb) {
-    return start_phase_exit_condtion_fulfilled(tb);
+end_phase_exit_condition_fulfilled(struct anvi_state *state) {
+    return start_phase_exit_condtion_fulfilled(state);
 }
+
+void
+safe_unlock_and_destroy_session_lock(struct anvi_state *state) {
+
+    if (state->session_is_locked) {
+        ext_session_lock_v1_unlock_and_destroy(state->session_lock);
+    } else {
+        ext_session_lock_v1_destroy(state->session_lock);
+    }
+
+    state->session_lock = NULL;
+}
+
+int
+handle_start_configuration_phase_exit_check(struct anvi_state *state) {
+    if (start_phase_exit_condtion_fulfilled(state)) {
+        safe_unlock_and_destroy_session_lock(state);
+        return 1;
+    }
+    return 0;
+}
+
+int
+handle_normal_phase_exit_check(struct anvi_state *state) {
+    if (normal_phase_exit_condition_fulfilled(state)) {
+        safe_unlock_and_destroy_session_lock(state);
+        return 1;
+    }
+    return 0;
+}
+
 
 int main(void) {
 
@@ -111,35 +143,21 @@ int main(void) {
             break;
         }
 
-        if (state.phase == ANVI_NORMAL_PHASE) {
-            if (state.session_is_locked && exit_condition_fulfilled(&state)) {
-                // state.phase = ANVI_FINISHED_PHASE;
-                ext_session_lock_v1_unlock_and_destroy(state.session_lock);
-
-                state.session_lock = NULL;
-
-                wl_display_roundtrip(state.display);
+        int should_break = 0;
+        switch (state.phase) {
+            case ANVI_START_CONFIGURATION_PHASE:
+                should_break = handle_start_configuration_phase_exit_check(&state);
                 break;
-            }
-        } else if (state.phase == ANVI_START_CONFIGURATION_PHASE) {
-            if (state.session_is_locked && start_phase_exit_condtion_fulfilled(state.text_buffer)) {
-                ext_session_lock_v1_unlock_and_destroy(state.session_lock);
-
-                state.session_lock = NULL;
-
-                wl_display_roundtrip(state.display);
+            case ANVI_NORMAL_PHASE:
+                should_break = handle_normal_phase_exit_check(&state);
                 break;
-            }
-        } else if (state.phase == ANVI_FINISHED_PHASE) {
-            if (state.session_is_locked && end_phase_exit_condition_fulfilled(state.text_buffer)) {
-
-                ext_session_lock_v1_unlock_and_destroy(state.session_lock);
-
-                state.session_lock = NULL;
-
-                wl_display_roundtrip(state.display);
+            case ANVI_FINISHED_PHASE:
                 break;
-            }
+        }
+
+        if (should_break) {
+            wl_display_roundtrip(state.display);
+            break;
         }
     }
 
