@@ -130,7 +130,9 @@ handle_return(struct anvi_state *state) {
                 reset_text_buffer(state->text_buffer);
             } else {
                 state->words_to_exit = x;
-                // I'm not convinced that it's a good idea to have the phase switch here...
+                // TODO: I'm not convinced that it's a good idea to have the phase switch here...
+                // Maybe the "return" -key press should put some "flush" -boolean on in the
+                // state instead. And then in the main loop we would have the phase-switching logic.
                 state->phase = ANVI_NORMAL_PHASE;
                 reset_text_buffer(state->text_buffer);
             }
