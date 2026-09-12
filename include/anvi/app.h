@@ -34,6 +34,7 @@ struct anvi_state {
     PangoLayout *layout;
 
     enum anvi_phase phase;
+    bool start_phase_include_invalid_input_text;
 
     size_t words_to_exit;
 
