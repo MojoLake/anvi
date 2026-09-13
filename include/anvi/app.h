@@ -18,6 +18,21 @@ enum anvi_phase {
     ANVI_FINISHED_PHASE = 3,
 };
 
+enum anvi_input_type {
+    ANVI_INPUT_TEXT,
+    ANVI_INPUT_ENTER,
+    ANVI_INPUT_BACKSPACE,
+    ANVI_INPUT_LEFT,
+    ANVI_INPUT_RIGHT,
+};
+
+constexpr size_t ANVI_INPUT_DATA_CAPACITY = 64;
+struct anvi_input {
+    enum anvi_input_type type;
+    char data[ANVI_INPUT_DATA_CAPACITY];
+    size_t data_length;
+};
+
 struct anvi_state {
     struct ext_session_lock_manager_v1 *session_lock_manager;
     struct ext_session_lock_v1 *session_lock;
@@ -45,4 +60,6 @@ struct anvi_state {
 };
 
 constexpr size_t WORDS_TO_EXIT = 15;
+
+void anvi_app_handle_input(struct anvi_state *state, struct anvi_input *input);
 #endif

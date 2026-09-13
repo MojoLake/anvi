@@ -20,7 +20,6 @@
 #include <anvi/keyboard.h>
 
 
-
 static void keymap(void *data,
 		       struct wl_keyboard *wl_keyboard,
 		       uint32_t format,
@@ -95,21 +94,6 @@ static void leave(void *data,
     anvi_log_info("Serial: %" PRIu32 "\n", serial);
 }
 
-static int
-number_in_text_buffer(struct anvi_text_buffer *tb) {
-    if (tb->length_bytes > 7) {
-        return -1; // No user wants to type a million characters...
-    }
-    int ret = 0;
-    for (size_t i = 0; i < tb->length_bytes; ++i) {
-        ret *= 10;
-        if (tb->data[i] < '0' || tb->data[i] > '9') {
-            return -1;
-        }
-        ret += tb->data[i] - '0';
-    }
-    return ret;
-}
 
 void
 reset_text_buffer(struct anvi_text_buffer *tb) {
@@ -120,70 +104,30 @@ reset_text_buffer(struct anvi_text_buffer *tb) {
     tb->cursor_bytes = 0;
 }
 
-static void
-handle_return(struct anvi_state *state) {
-    switch (state->phase) {
-        case ANVI_START_CONFIGURATION_PHASE:
-            const int x = number_in_text_buffer(state->text_buffer);
-            if (x == -1) {
-                state->start_phase_include_invalid_input_text = true;
-                reset_text_buffer(state->text_buffer);
-            } else {
-                state->words_to_exit = x;
-                // TODO: I'm not convinced that it's a good idea to have the phase switch here...
-                // Maybe the "return" -key press should put some "flush" -boolean on in the
-                // state instead. And then in the main loop we would have the phase-switching logic.
-                state->phase = ANVI_NORMAL_PHASE;
-                reset_text_buffer(state->text_buffer);
-            }
-            break;
-        case ANVI_NORMAL_PHASE:
-            anvi_text_buffer_insert(state->text_buffer, "\n", 1);
-            break;
-        case ANVI_FINISHED_PHASE:
-            // No-op I guess
-            const int y = number_in_text_buffer(state->text_buffer);
-            if (y == -1) {
-                // For now exit at any non-number input
-                state->user_wants_to_quit = true;
-            } else {
-                state->words_to_exit = y;
-                state->phase = ANVI_NORMAL_PHASE;
-                reset_text_buffer(state->text_buffer);
-                // We need to somehow have the old text-buffer stored.
-                // We definitely should have separate text-buffers for the different stages?
-            }
-            break;
-    }
-}
 
-bool check_and_handle_special_keys(struct anvi_state *state, xkb_keysym_t keysym) {
+enum anvi_input_type
+keysym_to_anvi_input_type(xkb_keysym_t keysym) {
 
     switch (keysym) {
         case XKB_KEY_Left:
-            anvi_text_buffer_left_arrow(state->text_buffer);
-            return true;
+            return ANVI_INPUT_LEFT;
         case XKB_KEY_Right:
-            anvi_text_buffer_right_arrow(state->text_buffer);
-            return true;
+            return ANVI_INPUT_RIGHT;
         case XKB_KEY_BackSpace:
-            anvi_text_buffer_backspace(state->text_buffer);
-            return true;
+            return ANVI_INPUT_BACKSPACE;
         case XKB_KEY_Return:
-            handle_return(state);
-            return true;
+            return ANVI_INPUT_ENTER;
     }
-    return false;
+    // Default to text.
+    return ANVI_INPUT_TEXT;
 }
 
-void handle_potential_text_input(struct anvi_state *state, xkb_keycode_t xkb_keycode) {
+void
+put_text_and_length_to_anvi_input(struct anvi_input *input, struct anvi_keyboard *keyboard, xkb_keycode_t xkb_keycode) {
 
-    struct anvi_keyboard *keyboard = state->keyboard;
+    const int length = xkb_state_key_get_utf8(keyboard->xkb_state, xkb_keycode, input->data, sizeof(input->data));
 
-    char text[64];
-    const int length = xkb_state_key_get_utf8(keyboard->xkb_state, xkb_keycode, text, sizeof(text));
-
-    anvi_text_buffer_insert(state->text_buffer, text, length);
+    input->data_length = length > 0 && (size_t)length < sizeof(input->data) ? (size_t)length : 0;
 }
 
 static void
@@ -192,13 +136,16 @@ handle_key_press(struct anvi_state *state, xkb_keycode_t xkb_keycode) {
     struct anvi_keyboard *keyboard = state->keyboard;
 
     xkb_keysym_t keysym = xkb_state_key_get_one_sym(keyboard->xkb_state, xkb_keycode);
-    bool special_key = check_and_handle_special_keys(state, keysym);
+    enum anvi_input_type type = keysym_to_anvi_input_type(keysym);
 
-    // Even though special_key == false here it might just be that we missed some special key in our `check_and_handle_special_keys` -function. Just a fyi.
-    if (!special_key) {
-        handle_potential_text_input(state, xkb_keycode);
+    struct anvi_input input = {0};
+    input.type = type;
+
+    if (type == ANVI_INPUT_TEXT) {
+        put_text_and_length_to_anvi_input(&input, state->keyboard, xkb_keycode);
     }
 
+    anvi_app_handle_input(state, &input);
 }
 
 void

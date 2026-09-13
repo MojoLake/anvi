@@ -26,6 +26,14 @@ struct anvi_keyboard {
     bool key_pressed;
 };
 
+enum anvi_input_type {
+    ANVI_INPUT_TEXT,
+    ANVI_INPUT_ENTER,
+    ANVI_INPUT_BACKSPACE,
+    ANVI_INPUT_LEFT,
+    ANVI_INPUT_RIGHT,
+};
+
 
 struct anvi_keyboard *anvi_keyboard_create(struct anvi_state *state, struct wl_seat *seat);
 
