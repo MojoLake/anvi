@@ -25,13 +25,13 @@ int exit_with_failure_and_message(char* msg) {
 
 bool
 normal_phase_exit_condition_fulfilled(struct anvi_state *state) {
-    if (anvi_text_buffer_word_count(state->text_buffer) >= state->words_to_exit) {
+    struct anvi_text_buffer *doc = state->document;
+    if (anvi_text_buffer_word_count(doc) >= state->words_to_exit) {
         return true;
     }
-    struct anvi_text_buffer *tb = state->text_buffer;
-    if (tb->length_bytes < 2) return false;
-    for (size_t i = 0; i < tb->length_bytes - 2; ++i) {
-        if (tb->data[i] == '1' && tb->data[i + 1] == '2' && tb->data[i + 2] == '3') {
+    if (doc->length_bytes < 2) return false;
+    for (size_t i = 0; i < doc->length_bytes - 2; ++i) {
+        if (doc->data[i] == '1' && doc->data[i + 1] == '2' && doc->data[i + 2] == '3') {
             return true;
         }
     }
@@ -40,9 +40,9 @@ normal_phase_exit_condition_fulfilled(struct anvi_state *state) {
 
 bool
 start_phase_exit_condtion_fulfilled(struct anvi_state *state) {
-    struct anvi_text_buffer *tb = state->text_buffer;
-    for (size_t i = 0; i < tb->length_bytes; ++i) {
-        if (tb->data[i] == 'q') {
+    struct anvi_text_buffer *pi = state->prompt_input;
+    for (size_t i = 0; i < pi->length_bytes; ++i) {
+        if (pi->data[i] == 'q') {
             return true;
         }
     }
@@ -78,9 +78,7 @@ handle_start_configuration_phase_exit_check(struct anvi_state *state) {
 int
 handle_normal_phase_exit_check(struct anvi_state *state) {
     if (normal_phase_exit_condition_fulfilled(state)) {
-        // safe_unlock_and_destroy_session_lock(state);
         state->phase = ANVI_FINISHED_PHASE;
-        reset_text_buffer(state->text_buffer);
         return 0;
     }
     return 0;

@@ -9,6 +9,29 @@
 #include <anvi/text_buffer.h>
 #include <anvi/log.h>
 
+
+void
+anvi_text_buffer_reset(struct anvi_text_buffer *tb) {
+    for (size_t i = 0; i < tb->length_bytes; ++i) {
+        tb->data[i] = '\0';
+    }
+    tb->length_bytes = 0;
+    tb->cursor_bytes = 0;
+}
+
+struct anvi_text_buffer*
+anvi_text_buffer_allocate_and_initialise() {
+    
+    struct anvi_text_buffer *tb = malloc(sizeof(struct anvi_text_buffer));
+    if (tb == NULL) {
+        return NULL;
+    }
+    tb->length_bytes = 0;
+    tb->cursor_bytes = 0;
+    tb->data[0] = '\0';
+    return tb;
+}
+
 static size_t
 find_length_of_grapheme_to_left_of_cursor(struct anvi_text_buffer *tb) {
     for (size_t i = 0; i < tb->length_bytes;) {

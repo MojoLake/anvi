@@ -26,13 +26,6 @@ struct anvi_keyboard {
     bool key_pressed;
 };
 
-enum anvi_input_type {
-    ANVI_INPUT_TEXT,
-    ANVI_INPUT_ENTER,
-    ANVI_INPUT_BACKSPACE,
-    ANVI_INPUT_LEFT,
-    ANVI_INPUT_RIGHT,
-};
 
 
 struct anvi_keyboard *anvi_keyboard_create(struct anvi_state *state, struct wl_seat *seat);
@@ -42,6 +35,5 @@ anvi_keyboard_destroy(struct anvi_keyboard *keyboard);
 
 bool anvi_keyboard_is_ready(const struct anvi_keyboard *keyboard);
 void handle_timer(struct anvi_state *state);
-void reset_text_buffer(struct anvi_text_buffer *tb);
 
 #endif

@@ -9,6 +9,7 @@
 #include <anvi/output.h>
 #include <anvi/buffer.h>
 #include <anvi/render.h>
+#include <anvi/text_buffer.h>
 
 static void
 seat_capabilities(void *data, struct wl_seat *seat, uint32_t capabilities) {
@@ -63,14 +64,18 @@ destroy_seat_proxy(struct wl_seat* seat) {
     }
 }
 
-
 void
 destroy_anvi_state(struct anvi_state *state) {
     destroy_outputs(state);
 
-    if (state->text_buffer != NULL) {
-        free(state->text_buffer);
-        state->text_buffer = NULL;
+    if (state->document != NULL) {
+        free(state->document);
+        state->document = NULL;
+    }
+
+    if (state->prompt_input != NULL) {
+        free(state->prompt_input);
+        state->prompt_input = NULL;
     }
 
     if (state->wl_shm != NULL) {
@@ -246,14 +251,15 @@ exit_with_failure_and_message_and_cleanup_state(char* msg, struct anvi_state *st
 int
 setup_initial_state(struct anvi_state *state) {
 
-    state->text_buffer = malloc(sizeof(struct anvi_text_buffer));
-
-    if (state->text_buffer == NULL) {
-        return exit_with_failure_and_message("Failed to allocate memory for text buffer.");
+    state->document = anvi_text_buffer_allocate_and_initialise();
+    if (state->document == NULL) {
+        return exit_with_failure_and_message("Failed to allocate memory for document text buffer.");
     }
-    state->text_buffer->length_bytes = 0;
-    state->text_buffer->cursor_bytes = 0;
-    state->text_buffer->data[0] = '\0';
+
+    state->prompt_input = anvi_text_buffer_allocate_and_initialise();
+    if (state->prompt_input == NULL) {
+        return exit_with_failure_and_message("Failed to allocate memory for prompt input text buffer.");
+    }
 
    	state->display = wl_display_connect(NULL);
   	if (state->display == NULL) {

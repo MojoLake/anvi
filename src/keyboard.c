@@ -95,14 +95,6 @@ static void leave(void *data,
 }
 
 
-void
-reset_text_buffer(struct anvi_text_buffer *tb) {
-    for (size_t i = 0; i < tb->length_bytes; ++i) {
-        tb->data[i] = '\0';
-    }
-    tb->length_bytes = 0;
-    tb->cursor_bytes = 0;
-}
 
 
 enum anvi_input_type

@@ -24,5 +24,7 @@ int anvi_text_buffer_insert(struct anvi_text_buffer *text_buffer, const char *te
 int anvi_text_buffer_right_arrow(struct anvi_text_buffer *tb);
 int anvi_text_buffer_left_arrow(struct anvi_text_buffer *tb);
 size_t anvi_text_buffer_word_count(struct anvi_text_buffer *tb);
+struct anvi_text_buffer *anvi_text_buffer_allocate_and_initialise();
+void anvi_text_buffer_reset(struct anvi_text_buffer *tb); 
 
 #endif

@@ -44,7 +44,7 @@ draw_text_starting_at(cairo_t *cr, PangoLayout *layout, char* text, const size_t
 
 static void
 draw_word_counter(struct anvi_state *state, cairo_t *cr, PangoLayout *layout) {
-    const size_t wc = anvi_text_buffer_word_count(state->text_buffer); 
+    const size_t wc = anvi_text_buffer_word_count(state->document); 
 
     char text[15];
     sprintf(text, "%ld / %ld", wc, state->words_to_exit);
@@ -79,7 +79,7 @@ construct_start_configuration_phase_text(struct anvi_state *state) {
         "%s%.*s",
         text_prompt,
         (int)available,
-        state->text_buffer->data
+        state->prompt_input->data // TODO: give only the text as argument to this function
     );
 
     if (state->start_phase_include_invalid_input_text) {
@@ -123,7 +123,7 @@ construct_finish_phase_text(struct anvi_state *state) {
         congrats_prompt_end,
         instruction_prompt,
         (int)space_left_for_text_buffer_data,
-        state->text_buffer->data
+        state->prompt_input->data
     );
 
     return result;
@@ -136,13 +136,13 @@ draw_start_configuration_phase(struct anvi_state *state, cairo_t *cr) {
     start_string_combined combined = construct_start_configuration_phase_text(state);
 
     draw_text_starting_at(cr, state->layout, combined.data, 10, 10);
-    draw_cursor(combined.prompt_text_length + state->text_buffer->cursor_bytes, cr, state->layout, 10, 10);
+    draw_cursor(combined.prompt_text_length + state->prompt_input->cursor_bytes, cr, state->layout, 10, 10);
 }
 
 static void
 draw_normal_phase(struct anvi_state *state, cairo_t *cr) {
-    draw_text_starting_at(cr, state->layout, state->text_buffer->data, MARGIN_WDITH, PADDING_TOP);
-    draw_cursor(state->text_buffer->cursor_bytes, cr, state->layout, MARGIN_WDITH, PADDING_TOP);
+    draw_text_starting_at(cr, state->layout, state->document->data, MARGIN_WDITH, PADDING_TOP);
+    draw_cursor(state->document->cursor_bytes, cr, state->layout, MARGIN_WDITH, PADDING_TOP);
     draw_word_counter(state, cr, state->layout);
 }
 
@@ -189,6 +189,8 @@ render_to_buffer(struct anvi_state *state, struct anvi_output *output, struct an
     
     cairo_destroy(cr);
     cairo_surface_flush(buffer->cairo_surface);
+
+    anvi_log_info("Cairo destroyed and surface flushed");
 }
 
 

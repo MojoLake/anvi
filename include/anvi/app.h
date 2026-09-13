@@ -44,7 +44,8 @@ struct anvi_state {
     struct wl_seat *seat;
     struct anvi_keyboard *keyboard;
 
-    struct anvi_text_buffer *text_buffer;
+    struct anvi_text_buffer *prompt_input;
+    struct anvi_text_buffer *document;
 
     PangoLayout *layout;
 
