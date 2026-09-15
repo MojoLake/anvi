@@ -63,4 +63,13 @@ struct anvi_state {
 constexpr size_t WORDS_TO_EXIT = 15;
 
 void anvi_app_handle_input(struct anvi_state *state, struct anvi_input *input);
+bool normal_phase_exit_condition_fulfilled(struct anvi_state *state);
+bool start_phase_exit_condtion_fulfilled(struct anvi_state *state);
+bool end_phase_exit_condition_fulfilled(struct anvi_state *state);
+int exit_with_failure_and_message(char* msg);
+int handle_finish_phase_exit_check(struct anvi_state *state);
+int handle_normal_phase_exit_check(struct anvi_state *state);
+int handle_start_configuration_phase_exit_check(struct anvi_state *state);
+void safe_unlock_and_destroy_session_lock(struct anvi_state *state);
+int poll_for_events_and_timer_completion(struct anvi_state *state);
 #endif

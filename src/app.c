@@ -1,5 +1,122 @@
 #include <anvi/app.h>
+#include <anvi/log.h>
 #include <anvi/text_buffer.h>
+#include <poll.h>
+
+
+int
+poll_for_events_and_timer_completion(struct anvi_state *state) {
+
+    const int wayland_fd = wl_display_get_fd(state->display);
+    const int timer_fd = state->keyboard->repeat_timer_fd;
+
+    struct pollfd fds[2] = {
+        {
+            .fd = wayland_fd,
+            .events = POLLIN,
+        },
+        {
+            .fd = timer_fd,
+            .events = POLLIN,
+        },
+    };
+
+    const int result = poll(fds, 2, -1);
+    if (result == -1) {
+        anvi_log_error("Something went wrong when polling for events and timers.");
+        return EXIT_FAILURE;
+    }
+
+    if (fds[0].revents & POLLIN) {
+        wl_display_read_events(state->display);
+    } else {
+        wl_display_cancel_read(state->display);
+    }
+
+    wl_display_dispatch_pending(state->display);
+
+    if (fds[1].revents & POLLIN) {
+        handle_timer(state); 
+    }
+
+    return EXIT_SUCCESS;
+}
+
+int
+exit_with_failure_and_message(char* msg) {
+    anvi_log_error(msg);
+    return EXIT_FAILURE;
+}
+
+bool
+normal_phase_exit_condition_fulfilled(struct anvi_state *state) {
+    struct anvi_text_buffer *doc = state->document;
+    if (anvi_text_buffer_word_count(doc) >= state->words_to_exit) {
+        return true;
+    }
+    if (doc->length_bytes < 2) return false;
+    for (size_t i = 0; i < doc->length_bytes - 2; ++i) {
+        if (doc->data[i] == '1' && doc->data[i + 1] == '2' && doc->data[i + 2] == '3') {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool
+start_phase_exit_condtion_fulfilled(struct anvi_state *state) {
+    struct anvi_text_buffer *pi = state->prompt_input;
+    for (size_t i = 0; i < pi->length_bytes; ++i) {
+        if (pi->data[i] == 'q') {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool
+end_phase_exit_condition_fulfilled(struct anvi_state *state) {
+    return start_phase_exit_condtion_fulfilled(state);
+}
+
+void
+safe_unlock_and_destroy_session_lock(struct anvi_state *state) {
+
+    if (state->session_is_locked) {
+        ext_session_lock_v1_unlock_and_destroy(state->session_lock);
+    } else {
+        ext_session_lock_v1_destroy(state->session_lock);
+    }
+
+    state->session_lock = NULL;
+}
+
+int
+handle_start_configuration_phase_exit_check(struct anvi_state *state) {
+    if (start_phase_exit_condtion_fulfilled(state)) {
+        safe_unlock_and_destroy_session_lock(state);
+        return 1;
+    }
+    return 0;
+}
+
+int
+handle_normal_phase_exit_check(struct anvi_state *state) {
+    if (normal_phase_exit_condition_fulfilled(state)) {
+        state->phase = ANVI_FINISHED_PHASE;
+        return 0;
+    }
+    return 0;
+}
+
+int
+handle_finish_phase_exit_check(struct anvi_state *state) {
+    if (state->user_wants_to_quit) {
+        safe_unlock_and_destroy_session_lock(state);
+        return 1;
+    }
+    return 0;
+}
 
 static int
 number_in_text_buffer(struct anvi_text_buffer *tb) {

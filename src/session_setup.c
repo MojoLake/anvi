@@ -236,12 +236,6 @@ static const struct wl_registry_listener registry_listener = {
 };
 
 static int
-exit_with_failure_and_message(char* msg) {
-    anvi_log_error(msg);
-    return EXIT_FAILURE;
-}
-
-static int
 exit_with_failure_and_message_and_cleanup_state(char* msg, struct anvi_state *state) {
 
     destroy_anvi_state(state);
