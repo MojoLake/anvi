@@ -60,8 +60,6 @@ struct anvi_state {
     bool session_is_finished;
 };
 
-constexpr size_t WORDS_TO_EXIT = 15;
-
 void anvi_app_handle_input(struct anvi_state *state, struct anvi_input *input);
 bool normal_phase_exit_condition_fulfilled(struct anvi_state *state);
 bool start_phase_exit_condtion_fulfilled(struct anvi_state *state);
