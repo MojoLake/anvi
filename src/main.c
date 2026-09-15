@@ -93,6 +93,44 @@ handle_finish_phase_exit_check(struct anvi_state *state) {
     return 0;
 }
 
+int
+poll_for_events_and_timer_completion(struct anvi_state *state) {
+
+    const int wayland_fd = wl_display_get_fd(state->display);
+    const int timer_fd = state->keyboard->repeat_timer_fd;
+
+    struct pollfd fds[2] = {
+        {
+            .fd = wayland_fd,
+            .events = POLLIN,
+        },
+        {
+            .fd = timer_fd,
+            .events = POLLIN,
+        },
+    };
+
+    const int result = poll(fds, 2, -1);
+    if (result == -1) {
+        anvi_log_error("Something went wrong when polling for events and timers.");
+        return EXIT_FAILURE;
+    }
+
+    if (fds[0].revents & POLLIN) {
+        wl_display_read_events(state->display);
+    } else {
+        wl_display_cancel_read(state->display);
+    }
+
+    wl_display_dispatch_pending(state->display);
+
+    if (fds[1].revents & POLLIN) {
+        handle_timer(state); 
+    }
+
+    return EXIT_SUCCESS;
+}
+
 
 int main(void) {
 
@@ -110,37 +148,9 @@ int main(void) {
         wl_display_prepare_read(state.display);
         wl_display_flush(state.display);
 
-        const int wayland_fd = wl_display_get_fd(state.display);
-        const int timer_fd = state.keyboard->repeat_timer_fd;
-
-        struct pollfd fds[2] = {
-            {
-                .fd = wayland_fd,
-                .events = POLLIN,
-            },
-            {
-                .fd = timer_fd,
-                .events = POLLIN,
-            },
-        };
-
-        const int result = poll(fds, 2, -1);
-        if (result == -1) {
-            anvi_log_error("Something went wrong when polling for events and timers.");
+        if (poll_for_events_and_timer_completion(&state) == EXIT_FAILURE) {
             return EXIT_FAILURE;
-        }
-
-        if (fds[0].revents & POLLIN) {
-            wl_display_read_events(state.display);
-        } else {
-            wl_display_cancel_read(state.display);
-        }
-
-        wl_display_dispatch_pending(state.display);
-
-        if (fds[1].revents & POLLIN) {
-            handle_timer(&state); 
-        }
+        };
 
         if (state.session_is_finished) {
             safe_unlock_and_destroy_session_lock(&state);
