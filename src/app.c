@@ -1,3 +1,5 @@
+#include <assert.h>
+
 #include <anvi/app.h>
 #include <anvi/log.h>
 #include <anvi/text_buffer.h>
@@ -121,15 +123,19 @@ handle_finish_phase_exit_check(struct anvi_state *state) {
 static int
 number_in_text_buffer(struct anvi_text_buffer *tb) {
     if (tb->length_bytes > 7) {
-        return -1; // No user wants to type a million characters...
+        return -1;
     }
-    int ret = 0;
+    size_t ret = 0;
     for (size_t i = 0; i < tb->length_bytes; ++i) {
         ret *= 10;
         if (tb->data[i] < '0' || tb->data[i] > '9') {
             return -1;
         }
         ret += tb->data[i] - '0';
+    }
+    constexpr size_t chars_to_numbers_multiplier = 10;
+    if (ret * chars_to_numbers_multiplier >= MAXIMUM_NUMBER_OF_CHARS) {
+        return -1; // Would not fit the buffer probably. 
     }
     return ret;
 }
