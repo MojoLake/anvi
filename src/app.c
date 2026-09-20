@@ -10,25 +10,29 @@
 #include <anvi/log.h>
 #include <anvi/text_buffer.h>
 
-
 int
 poll_for_events_and_timer_completion(struct anvi_state *state) {
 
     const int wayland_fd = wl_display_get_fd(state->display);
-    const int timer_fd = state->keyboard->repeat_timer_fd;
+    const int repeat_timer_fd = state->keyboard->repeat_timer_fd;
+    const int save_timer_fd = state->storage->save_timer_fd;
 
-    struct pollfd fds[2] = {
+    struct pollfd fds[3] = {
         {
             .fd = wayland_fd,
             .events = POLLIN,
         },
         {
-            .fd = timer_fd,
+            .fd = repeat_timer_fd,
+            .events = POLLIN,
+        },
+        {
+            .fd = save_timer_fd,
             .events = POLLIN,
         },
     };
 
-    const int result = poll(fds, 2, -1);
+    const int result = poll(fds, 3, -1);
     if (result == -1) {
         anvi_log_error("Something went wrong when polling for events and timers.");
         return EXIT_FAILURE;
@@ -44,6 +48,12 @@ poll_for_events_and_timer_completion(struct anvi_state *state) {
 
     if (fds[1].revents & POLLIN) {
         handle_timer(state); 
+    }
+
+    if (fds[2].revents & POLLIN) {
+        if (handle_save_timer(state->storage, state->document) == EXIT_FAILURE) {
+            return EXIT_FAILURE;
+        }
     }
 
     return EXIT_SUCCESS;

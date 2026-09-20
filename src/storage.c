@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <sys/timerfd.h>
 
 #include <anvi/app.h>
 #include <anvi/log.h>
@@ -84,6 +85,7 @@ create_document_fd(struct anvi_storage *storage) {
 
 int
 write_bytes_to_document_fd(struct anvi_storage *storage, struct anvi_text_buffer *doc) {
+    anvi_log_info("Saving document to disk.");
     size_t offset = 0;
     while (offset < doc->length_bytes) {
         ssize_t n = write(storage->document_fd, doc->data + offset, doc->length_bytes - offset);
@@ -97,4 +99,44 @@ write_bytes_to_document_fd(struct anvi_storage *storage, struct anvi_text_buffer
         }
     }
     return EXIT_SUCCESS;
+}
+
+int
+create_save_timer_fd(struct anvi_storage *storage) {
+    storage->save_timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC | TFD_NONBLOCK);
+
+    if (storage->save_timer_fd < 0) {
+        anvi_log_error("Failed to create storage save timer.");
+        return EXIT_FAILURE;
+    }
+    return EXIT_SUCCESS;
+}
+
+int
+start_save_timer(struct anvi_storage *storage) {
+    struct itimerspec timer = {0};
+
+    timer.it_value.tv_sec = SAVE_EVERY_MS / 1000;
+    timer.it_value.tv_nsec = (SAVE_EVERY_MS % 1000) * 1000000L;
+
+    if (timerfd_settime(storage->save_timer_fd, 0, &timer, NULL) < 0) {
+        anvi_log_error("Failed to start save timer.");
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
+}
+
+int
+handle_save_timer(struct anvi_storage *storage, struct anvi_text_buffer *doc) {
+
+    uint64_t expirations;
+    ssize_t bytes_read = read(storage->save_timer_fd, &expirations, sizeof(expirations));
+
+    if (bytes_read == sizeof(expirations)) {
+        write_bytes_to_document_fd(storage, doc); 
+    }
+    
+    // Start a new timer.
+    return start_save_timer(storage);
 }

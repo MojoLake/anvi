@@ -342,6 +342,16 @@ setup_initial_state(struct anvi_state *state) {
         return EXIT_FAILURE;
     }
 
+    if (create_save_timer_fd(state->storage) == EXIT_FAILURE) {
+        destroy_anvi_state(state);
+        return EXIT_FAILURE;
+    }
+
+    if (start_save_timer(state->storage) == EXIT_FAILURE) {
+        destroy_anvi_state(state);
+        return EXIT_FAILURE;
+    }
+
     state->phase = ANVI_START_CONFIGURATION_PHASE;
 
     return EXIT_SUCCESS;
