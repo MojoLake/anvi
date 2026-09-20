@@ -1,5 +1,8 @@
 #include <assert.h>
 
+#include <xkbcommon/xkbcommon.h>
+#include <xkbcommon/xkbcommon-keysyms.h>
+
 #include <anvi/app.h>
 #include <anvi/log.h>
 #include <anvi/text_buffer.h>
@@ -67,6 +70,10 @@ normal_phase_exit_condition_fulfilled(struct anvi_state *state) {
 
 bool
 start_phase_exit_condtion_fulfilled(struct anvi_state *state) {
+    if (state->user_wants_to_quit) {
+        state->user_wants_to_quit = false;
+        return true;
+    }
     struct anvi_text_buffer *pi = state->prompt_input;
     for (size_t i = 0; i < pi->length_bytes; ++i) {
         if (pi->data[i] == 'q') {
@@ -104,9 +111,13 @@ handle_start_configuration_phase_exit_check(struct anvi_state *state) {
 
 int
 handle_normal_phase_exit_check(struct anvi_state *state) {
-    if (normal_phase_exit_condition_fulfilled(state)) {
-        state->phase = ANVI_FINISHED_PHASE;
-        return 0;
+    if (state->user_wants_to_quit) {
+
+        state->user_wants_to_quit = false;
+        if (normal_phase_exit_condition_fulfilled(state)) {
+            state->phase = ANVI_FINISHED_PHASE;
+            return 0;
+        }
     }
     return 0;
 }
@@ -114,6 +125,7 @@ handle_normal_phase_exit_check(struct anvi_state *state) {
 int
 handle_finish_phase_exit_check(struct anvi_state *state) {
     if (state->user_wants_to_quit) {
+        state->user_wants_to_quit = false;
         safe_unlock_and_destroy_session_lock(state);
         return 1;
     }
@@ -195,27 +207,49 @@ get_currently_active_text_buffer(struct anvi_state *state) {
     return state->document; // To suppress warnings.
 }
 
+static void
+handle_input_text_when_ctrl_down(struct anvi_state *state, struct anvi_input *input) {
+    if (input->keysym == XKB_KEY_q) {
+        state->user_wants_to_quit = true;
+    }
+}
+
 void
 anvi_app_handle_input(struct anvi_state *state, struct anvi_input *input) {
     // Most inputs do the same action no matter what phase.
     // Let's thus first match on input->type and on some cases
     // have the handler function check the phase.
     struct anvi_text_buffer *current_tb = get_currently_active_text_buffer(state);
-    switch (input->type) {
-        case ANVI_INPUT_LEFT:
-            anvi_text_buffer_left_arrow(current_tb);
-            break;
-        case ANVI_INPUT_RIGHT:
-            anvi_text_buffer_right_arrow(current_tb);
-            break;
-        case ANVI_INPUT_BACKSPACE:
-            anvi_text_buffer_backspace(current_tb);
-            break;
-        case ANVI_INPUT_TEXT:
-            anvi_text_buffer_insert(current_tb, input->data, input->data_length); 
-            break;
-        case ANVI_INPUT_ENTER:
-            handle_enter(state);
-            break;
+
+    if (input->ctrl_down) {
+
+        switch (input->type) {
+            case ANVI_INPUT_TEXT:
+                handle_input_text_when_ctrl_down(state, input);
+                break;
+            default:
+                break;
+        }
+
+    } else {
+
+        switch (input->type) {
+            case ANVI_INPUT_LEFT:
+                anvi_text_buffer_left_arrow(current_tb);
+                break;
+            case ANVI_INPUT_RIGHT:
+                anvi_text_buffer_right_arrow(current_tb);
+                break;
+            case ANVI_INPUT_BACKSPACE:
+                anvi_text_buffer_backspace(current_tb);
+                break;
+            case ANVI_INPUT_TEXT:
+                anvi_text_buffer_insert(current_tb, input->data, input->data_length); 
+                break;
+            case ANVI_INPUT_ENTER:
+                handle_enter(state);
+                break;
+        }
     }
+
 }

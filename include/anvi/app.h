@@ -4,6 +4,7 @@
 #include <pango/pangocairo.h>
 
 #include <wayland-client.h>
+#include <xkbcommon/xkbcommon.h>
 
 #include "ext-session-lock-v1-client-protocol.h"
 
@@ -29,6 +30,8 @@ enum anvi_input_type {
 constexpr size_t ANVI_INPUT_DATA_CAPACITY = 64;
 struct anvi_input {
     enum anvi_input_type type;
+    bool ctrl_down;
+    xkb_keysym_t keysym;
     char data[ANVI_INPUT_DATA_CAPACITY];
     size_t data_length;
 };

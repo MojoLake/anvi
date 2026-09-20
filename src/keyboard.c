@@ -133,6 +133,11 @@ handle_key_press(struct anvi_state *state, xkb_keycode_t xkb_keycode) {
     struct anvi_input input = {0};
     input.type = type;
 
+    if (xkb_state_mod_name_is_active(keyboard->xkb_state, XKB_MOD_NAME_CTRL, XKB_STATE_MODS_EFFECTIVE) > 0) {
+        input.ctrl_down = true;
+        input.keysym = keysym;
+    }
+
     if (type == ANVI_INPUT_TEXT) {
         put_text_and_length_to_anvi_input(&input, state->keyboard, xkb_keycode);
     }
