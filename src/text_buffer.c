@@ -140,15 +140,6 @@ anvi_text_buffer_insert(struct anvi_text_buffer *tb, const char *text, size_t by
 
 int
 anvi_text_buffer_right_arrow(struct anvi_text_buffer *tb) {
-    // Go to the right.
-    // So we will soon have some function for going one grapheme to the left or right.
-    // Then the code would look something like:
-    /*
-     * try_move_cursor(1) for right and try_move_cursor(-1) for left
-     *  and try_move_cursor(int) would be like:[
-     * ] int try_move_cursor(int dp) (dp = displacement)
-     *      
-     */
     return anvi_text_buffer_move_cursor_in_dir(tb, ANVI_CURSOR_RIGHT);
 }
 
