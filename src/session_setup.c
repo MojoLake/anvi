@@ -327,7 +327,18 @@ setup_initial_state(struct anvi_state *state) {
 
     add_surface_frame_listeners_for_outputs(state);
 
-    if (create_document_fd(state, "/home/mojolake/Documents/anvi/test.txt") == EXIT_FAILURE) {
+    const char *home = getenv("HOME"); 
+    if (home == NULL || home[0] == '\0') {
+        return exit_with_failure_and_message_and_cleanup_state("Couldn't read user's home directory.", state);
+    }
+
+    
+    const int n = snprintf(state->path_for_document_fd, sizeof state->path_for_document_fd, "%s/Documents/anvi/test.txt", home);
+    if (n < 0) {
+        return EXIT_FAILURE;
+    }
+    if (create_document_fd(state, state->path_for_document_fd) == EXIT_FAILURE) {
+        destroy_anvi_state(state);
         return EXIT_FAILURE;
     }
 

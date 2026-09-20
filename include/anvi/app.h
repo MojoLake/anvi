@@ -51,6 +51,7 @@ struct anvi_state {
     struct anvi_text_buffer *document;
 
     int document_fd;
+    char path_for_document_fd[4096];
 
     PangoLayout *layout;
 
