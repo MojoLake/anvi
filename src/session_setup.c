@@ -68,8 +68,13 @@ void
 destroy_anvi_state(struct anvi_state *state) {
     destroy_outputs(state);
 
-    if (state->document_fd > 0) {
-        close(state->document_fd);
+    if (state->storage != NULL) {
+        if (state->storage->document_fd > 0) {
+            close(state->storage->document_fd);
+        }
+
+        free(state->storage);
+        state->storage = NULL;
     }
 
     if (state->document != NULL) {
@@ -327,7 +332,12 @@ setup_initial_state(struct anvi_state *state) {
 
     add_surface_frame_listeners_for_outputs(state);
 
-    if (create_document_fd(state) == EXIT_FAILURE) {
+    state->storage = malloc(sizeof(struct anvi_storage));
+    if (state->storage == NULL) {
+        return exit_with_failure_and_message_and_cleanup_state("Failed to allocate memory for persistent storage.", state);
+    }
+
+    if (create_document_fd(state->storage) == EXIT_FAILURE) {
         destroy_anvi_state(state);
         return EXIT_FAILURE;
     }

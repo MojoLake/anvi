@@ -70,6 +70,7 @@ executable(
     'src/text_buffer.c',
     'src/render.c',
     'src/app.c',
+    'src/storage.c',
     session_lock_header,
     session_lock_code,
   ],

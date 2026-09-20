@@ -10,6 +10,7 @@
 
 #include <anvi/text_buffer.h>
 #include <anvi/keyboard.h>
+#include <anvi/storage.h>
 
 struct anvi_output;
 
@@ -50,8 +51,7 @@ struct anvi_state {
     struct anvi_text_buffer *prompt_input;
     struct anvi_text_buffer *document;
 
-    int document_fd;
-    char path_for_document_fd[4096];
+    struct anvi_storage *storage; 
 
     PangoLayout *layout;
 
@@ -76,6 +76,4 @@ int handle_normal_phase_exit_check(struct anvi_state *state);
 int handle_start_configuration_phase_exit_check(struct anvi_state *state);
 void safe_unlock_and_destroy_session_lock(struct anvi_state *state);
 int poll_for_events_and_timer_completion(struct anvi_state *state);
-int create_document_fd(struct anvi_state *state);
-int write_bytes_to_document_fd(struct anvi_state *state);
 #endif

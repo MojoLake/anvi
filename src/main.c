@@ -53,7 +53,7 @@ int main(void) {
 
         if (should_break) {
             wl_display_roundtrip(state.display);
-            write_bytes_to_document_fd(&state);
+            write_bytes_to_document_fd(state.storage, state.document);
             break;
         }
     }
