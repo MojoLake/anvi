@@ -76,6 +76,6 @@ int handle_normal_phase_exit_check(struct anvi_state *state);
 int handle_start_configuration_phase_exit_check(struct anvi_state *state);
 void safe_unlock_and_destroy_session_lock(struct anvi_state *state);
 int poll_for_events_and_timer_completion(struct anvi_state *state);
-int create_document_fd(struct anvi_state *state, char* path);
+int create_document_fd(struct anvi_state *state);
 int write_bytes_to_document_fd(struct anvi_state *state);
 #endif
