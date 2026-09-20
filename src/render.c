@@ -108,7 +108,7 @@ construct_finish_phase_text(struct anvi_state *state) {
 
     char congrats_prompt_start[] = "Congratulations, you wrote ";
     char congrats_prompt_end[] = " words!\n";
-    char instruction_prompt[] = "Type q to quit, or a new word count to continue: ";
+    char instruction_prompt[] = "Type q to quit, or a new, higher word count to continue: ";
 
     finish_string_combined result;
 
@@ -119,7 +119,7 @@ construct_finish_phase_text(struct anvi_state *state) {
         MAX_FINISH_TEXT_COMBINED_LEN,
         "%s%zu%s%s%.*s",
         congrats_prompt_start,
-        state->words_to_exit,
+        anvi_text_buffer_word_count(state->document),
         congrats_prompt_end,
         instruction_prompt,
         (int)space_left_for_text_buffer_data,
