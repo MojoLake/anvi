@@ -68,6 +68,10 @@ void
 destroy_anvi_state(struct anvi_state *state) {
     destroy_outputs(state);
 
+    if (state->document_fd > 0) {
+        close(state->document_fd);
+    }
+
     if (state->document != NULL) {
         free(state->document);
         state->document = NULL;
@@ -322,6 +326,10 @@ setup_initial_state(struct anvi_state *state) {
     }
 
     add_surface_frame_listeners_for_outputs(state);
+
+    if (create_document_fd(state, "/home/mojolake/Documents/anvi/test.txt") == EXIT_FAILURE) {
+        return EXIT_FAILURE;
+    }
 
     state->phase = ANVI_START_CONFIGURATION_PHASE;
 

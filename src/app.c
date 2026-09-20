@@ -1,3 +1,7 @@
+#define _GNU_SOURCE
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <assert.h>
 
 #include <xkbcommon/xkbcommon.h>
@@ -7,6 +11,39 @@
 #include <anvi/log.h>
 #include <anvi/text_buffer.h>
 #include <poll.h>
+
+
+int
+create_document_fd(struct anvi_state *state, char* path) {
+    int fd = open(path, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0600);
+
+    if (fd == -1) {
+        anvi_log_error("Failed to create file descript for persisting the document: %s", strerror(errno));
+        return EXIT_FAILURE;
+    }
+
+    state->document_fd = fd;
+
+    return EXIT_SUCCESS;
+}
+
+int
+write_bytes_to_document_fd(struct anvi_state *state) {
+    struct anvi_text_buffer *doc = state->document;
+    size_t offset = 0;
+    while (offset < doc->length_bytes) {
+        ssize_t n = write(state->document_fd, doc->data + offset, doc->length_bytes - offset);
+
+        if (n > 0) {
+            offset += (size_t)n;
+        } else if (n == -1 && errno == EINTR){
+            continue;
+        } else {
+            return EXIT_FAILURE;
+        }
+    }
+    return EXIT_SUCCESS;
+}
 
 
 int
