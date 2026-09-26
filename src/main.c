@@ -28,7 +28,7 @@ int main(void) {
         return EXIT_FAILURE;
     }
 
-    anvi_log_info("Initial state setup successfully.\n");
+    anvi_log_info("Initial state setup successfully.");
 
     while (true) {
 
