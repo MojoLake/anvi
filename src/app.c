@@ -88,9 +88,9 @@ start_phase_exit_condtion_fulfilled(struct anvi_state *state) {
     }
     struct anvi_text_buffer *pi = state->prompt_input;
     for (size_t i = 0; i < pi->length_bytes; ++i) {
-        if (pi->data[i] == 'q') {
-            return true;
-        }
+        // if (pi->data[i] == 'q') {
+        //     return true;
+        // }
     }
     return false;
 }
@@ -164,8 +164,17 @@ number_in_text_buffer(struct anvi_text_buffer *tb) {
     return ret;
 }
 
+static bool
+is_q(char *text) {
+    return strlen(text) == 1 && text[0] == 'q';
+}
+
 static void
 handle_configuration_phase_enter(struct anvi_state *state) {
+    if (is_q(state->prompt_input->data)) {
+        state->user_wants_to_quit = true;
+        return;
+    }
     const int x = number_in_text_buffer(state->prompt_input);
     if (x == -1) {
         state->start_phase_include_invalid_input_text = true;
