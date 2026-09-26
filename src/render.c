@@ -53,6 +53,13 @@ draw_word_counter(struct anvi_state *state, cairo_t *cr, PangoLayout *layout) {
 }
 
 static void
+draw_enough_words_text_button(cairo_t *cr, PangoLayout *layout) {
+    char text[] = "Click here or ctrl + q to finish.";
+    draw_text_starting_at(cr, layout, text, 100, 10);
+    pango_layout_set_text(layout, text, -1);
+}
+
+static void
 setup_pango_layout_for_current_output(struct anvi_output *output, PangoLayout *layout) {
 
     pango_layout_set_width(layout, (output->width - 2 * MARGIN_WDITH) * PANGO_SCALE);
@@ -144,6 +151,11 @@ draw_normal_phase(struct anvi_state *state, cairo_t *cr) {
     draw_text_starting_at(cr, state->layout, state->document->data, MARGIN_WDITH, PADDING_TOP);
     draw_cursor(state->document->cursor_bytes, cr, state->layout, MARGIN_WDITH, PADDING_TOP);
     draw_word_counter(state, cr, state->layout);
+
+    const size_t wc = anvi_text_buffer_word_count(state->document);
+    if (wc >= state->words_to_exit) {
+        draw_enough_words_text_button(cr, state->layout);
+    }
 }
 
 static void
