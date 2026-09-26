@@ -10,6 +10,7 @@
 
 #include <anvi/app.h>
 #include <anvi/log.h>
+#include <anvi/config.h>
 
 
 static int
@@ -52,19 +53,32 @@ create_directory(char *path) {
     return EXIT_SUCCESS;
 }
 
-int
-create_document_fd(struct anvi_storage *storage) {
+static int
+set_default_save_path(char *directory) {
     const char *home = getenv("HOME"); 
     if (home == NULL || home[0] == '\0') {
         anvi_log_error("Couldn't figure out what the user's home directory is.");
         return EXIT_FAILURE;
     }
 
-    char directory[4096];
     
-    const int n = snprintf(directory, sizeof directory, "%s/anvi", home);
+    const int n = snprintf(directory, MAX_FILE_PATH_LEN, "%s/anvi", home);
     if (n < 0) {
         return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
+}
+
+int
+create_document_fd(struct anvi_storage *storage, char *save_path) {
+    char directory[4096];
+    if (save_path == NULL || save_path[0] == '\0') {
+        if (set_default_save_path(directory) == EXIT_FAILURE) {
+            return EXIT_FAILURE;
+        }
+    } else {
+        strcpy(directory, save_path);
     }
 
     if (create_directory(directory) == EXIT_FAILURE) {

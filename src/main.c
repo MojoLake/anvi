@@ -12,12 +12,19 @@
 #include <anvi/buffer.h>
 #include <anvi/keyboard.h>
 #include <anvi/session_setup.h>
+#include <anvi/config.h>
 
 
 int main(void) {
     struct anvi_state state = {0};
+    struct anvi_config config = {0};
 
-    if (setup_initial_state(&state) == EXIT_FAILURE) {
+    anvi_config_set_defaults(&config);
+    if (anvi_config_load(&config) == EXIT_FAILURE) {
+        return EXIT_FAILURE;
+    }
+
+    if (setup_initial_state(&state, &config) == EXIT_FAILURE) {
         return EXIT_FAILURE;
     }
 

@@ -3,9 +3,11 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include <anvi/app.h>
 #include <anvi/log.h>
+#include <anvi/config.h>
 #include <anvi/output.h>
 #include <anvi/buffer.h>
 #include <anvi/render.h>
@@ -15,6 +17,7 @@ static void
 seat_capabilities(void *data, struct wl_seat *seat, uint32_t capabilities) {
 
     struct anvi_state *state = data;
+
     
     if (capabilities & WL_SEAT_CAPABILITY_KEYBOARD) {
         anvi_log_info("Seat has a keyboard");
@@ -252,7 +255,7 @@ exit_with_failure_and_message_and_cleanup_state(char* msg, struct anvi_state *st
 }
 
 int
-setup_initial_state(struct anvi_state *state) {
+setup_initial_state(struct anvi_state *state, struct anvi_config *config) {
 
     state->document = anvi_text_buffer_allocate_and_initialise();
     if (state->document == NULL) {
@@ -337,7 +340,7 @@ setup_initial_state(struct anvi_state *state) {
         return exit_with_failure_and_message_and_cleanup_state("Failed to allocate memory for persistent storage.", state);
     }
 
-    if (create_document_fd(state->storage) == EXIT_FAILURE) {
+    if (create_document_fd(state->storage, config->save_dir) == EXIT_FAILURE) {
         destroy_anvi_state(state);
         return EXIT_FAILURE;
     }

@@ -71,6 +71,7 @@ executable(
     'src/render.c',
     'src/app.c',
     'src/storage.c',
+    'src/config.c',
     session_lock_header,
     session_lock_code,
   ],

@@ -12,7 +12,7 @@ struct anvi_storage {
     int save_timer_fd;
 };
 
-int create_document_fd(struct anvi_storage *storage);
+int create_document_fd(struct anvi_storage *storage, char *save_path);
 int write_bytes_to_document_fd(struct anvi_storage *storage, struct anvi_text_buffer *doc);
 int create_save_timer_fd(struct anvi_storage *storage);
 int start_save_timer(struct anvi_storage *storage);
