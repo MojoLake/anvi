@@ -100,6 +100,15 @@ create_document_fd(struct anvi_storage *storage, char *save_path) {
 int
 write_bytes_to_document_fd(struct anvi_storage *storage, struct anvi_text_buffer *doc) {
     anvi_log_info("Saving document to disk.");
+
+    if (ftruncate(storage->document_fd, 0) == -1) {
+        return EXIT_FAILURE;
+    }
+
+    if (lseek(storage->document_fd, 0, SEEK_SET) == -1) {
+        return EXIT_FAILURE;
+    }
+
     size_t offset = 0;
     while (offset < doc->length_bytes) {
         ssize_t n = write(storage->document_fd, doc->data + offset, doc->length_bytes - offset);
