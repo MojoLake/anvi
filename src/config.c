@@ -1,3 +1,4 @@
+#include <glib.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -8,12 +9,36 @@
 #include <anvi/log.h>
 #include <anvi/config.h>
 
-void
+int
 anvi_config_set_defaults(struct anvi_config *config) {
-    char path[] = "/home/mojolake/.config/anvi";
-    for (size_t i = 0; i < sizeof(path); ++i) {
-        config->save_dir[i] = path[i];
+    const char *documents_dir = g_get_user_special_dir(G_USER_DIRECTORY_DOCUMENTS);
+
+    char *fallback_documents_dir = NULL;
+
+    if (documents_dir == NULL || documents_dir[0] == '\0') {
+        fallback_documents_dir = g_build_filename(g_get_home_dir(), "Documents", NULL);
+
+        documents_dir = fallback_documents_dir;
     }
+
+    char *default_save_dir = g_build_filename(documents_dir, "anvi", NULL);
+
+    size_t path_length = strlen(default_save_dir);
+
+    if (path_length >= sizeof config->save_dir) {
+        anvi_log_error("The default save directory is too long: %s", default_save_dir);
+
+        g_free(default_save_dir);
+        g_free(fallback_documents_dir);
+        return EXIT_FAILURE;
+    }
+
+    memcpy(config->save_dir, default_save_dir, path_length + 1);
+
+    g_free(default_save_dir);
+    g_free(fallback_documents_dir);
+
+    return EXIT_SUCCESS;
 }
 
 enum anvi_config_key {

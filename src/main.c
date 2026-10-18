@@ -26,7 +26,9 @@ int main(void) {
     bool show_save_dialog = false;
     char recovery_path[MAX_FILE_PATH_LEN] = {0};
 
-    anvi_config_set_defaults(&config);
+    if (anvi_config_set_defaults(&config) == EXIT_FAILURE) {
+        return EXIT_FAILURE;
+    }
     if (anvi_config_load(&config) == EXIT_FAILURE) {
         return EXIT_FAILURE;
     }
@@ -94,7 +96,7 @@ int main(void) {
     destroy_anvi_state(&state);
 
     if (show_save_dialog) {
-        return anvi_show_save_dialog(recovery_path);
+        return anvi_show_save_dialog(recovery_path, config.save_dir);
     }
 	return EXIT_SUCCESS;
 }

@@ -64,9 +64,14 @@ save_dialog_finished(GObject *source_object, GAsyncResult *async_result, gpointe
 }
 
 int
-anvi_show_save_dialog(const char *recovery_path) {
+anvi_show_save_dialog(const char *recovery_path, const char *initial_directory) {
     if (recovery_path == NULL || recovery_path[0] == '\0') {
         anvi_log_error("Cannot open the save dialog without a recovery path.");
+        return EXIT_FAILURE;
+    }
+
+    if (initial_directory == NULL || initial_directory[0] == '\0') {
+        anvi_log_error("Cannot open the save dialog without an initial directory. The document remains at %s", recovery_path);
         return EXIT_FAILURE;
     }
 
@@ -78,9 +83,11 @@ anvi_show_save_dialog(const char *recovery_path) {
     GMainLoop *loop = g_main_loop_new(NULL, false);
     GtkFileDialog *dialog = gtk_file_dialog_new();
     char *suggested_name = g_path_get_basename(recovery_path);
+    GFile *initial_folder = g_file_new_for_path(initial_directory);
 
     gtk_file_dialog_set_title(dialog, "Save Anvi document");
     gtk_file_dialog_set_accept_label(dialog, "Save");
+    gtk_file_dialog_set_initial_folder(dialog, initial_folder);
     gtk_file_dialog_set_initial_name(dialog, suggested_name);
 
     struct save_dialog_context context = {
@@ -94,6 +101,7 @@ anvi_show_save_dialog(const char *recovery_path) {
     g_main_loop_run(loop);
 
     g_free(suggested_name);
+    g_object_unref(initial_folder);
     g_object_unref(dialog);
     g_main_loop_unref(loop);
 
