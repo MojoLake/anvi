@@ -25,6 +25,7 @@
             cairo
             libgrapheme
             pango
+            gtk4
           ];
         };
       };

@@ -14,6 +14,7 @@ cairo = dependency('cairo')
 pango = dependency('pango')
 pangocairo = dependency('pangocairo')
 libgrapheme = dependency('libgrapheme')
+gtk4 = dependency('gtk4', version: '>=4.10')
 
 wayland_client = dependency('wayland-client', version: '>=1.20')
 wayland_protocols = dependency('wayland-protocols')
@@ -72,6 +73,7 @@ executable(
     'src/app.c',
     'src/storage.c',
     'src/config.c',
+    'src/save_dialog'c,
     session_lock_header,
     session_lock_code,
   ],
@@ -83,6 +85,7 @@ executable(
     pango,
     pangocairo,
     libgrapheme,
+    gtk4,
   ]
 )
 
