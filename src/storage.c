@@ -1,5 +1,7 @@
 #define _GNU_SOURCE
 
+#include <string.h>
+#include <time.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -14,26 +16,57 @@
 
 
 static int
-create_fd_with_unoccupied_file_name(char *dir_path, char* start_name) {
-    
-    char name[256];
-    char full_path[4096];
+create_fd_with_unoccupied_file_name(char *dir_path, char* created_path, size_t created_path_capacity) {
+    time_t now = time(NULL);
+    struct tm local_time;
+
+    if (now == (time_t)-1 || localtime_r(&now, &local_time) == NULL) {
+        return -1;
+    }
+
+    char stem[64];
+
+    if (strftime( stem, sizeof stem, "anvi-%Y-%m-%d-%H%M", &local_time) == 0) {
+        errno = EOVERFLOW;
+        return -1;
+    }
 
     for (size_t i = 0; i < 10000; ++i) {
-        const int n = snprintf(name, sizeof name, "%s_%zu.txt", start_name, i);
+        char name[256];
 
-        if (n < 0) continue;
+        int name_length;
 
-        const int m = snprintf(full_path, sizeof full_path, "%s/%s", dir_path, name);
+        if (i == 0) {
+            name_length = snprintf(name, sizeof name, "%s.txt", stem);
+        } else {
+            name_length = snprintf(name, sizeof name, "%s-%zu.txt", stem, i);
+        }
 
-        if (m < 0) continue;
+        if (name_length < 0 || (size_t)name_length >= sizeof name) {
+            errno = ENAMETOOLONG;
+            return -1;
+        }
 
-        int fd = open(full_path, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0600);
+        int path_length = snprintf(created_path, created_path_capacity, "%s/%s", dir_path, name);
 
-        if (fd < 0) continue;
-        return fd;
+        if (path_length < 0 || (size_t)path_length >= created_path_capacity) {
+            errno = ENAMETOOLONG;
+            return -1;
+        }
+
+        int fd = open(created_path, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0600);
+
+        if (fd >= 0) {
+            return fd;
+        }
+
+        if (errno != EEXIST) {
+            return -1;
+        }
     }
-    return -1; 
+
+    errno = EEXIST;
+    return -1;
 }
 
 static int
@@ -85,7 +118,7 @@ create_document_fd(struct anvi_storage *storage, char *save_path) {
         return EXIT_FAILURE;
     }
 
-    int fd = create_fd_with_unoccupied_file_name(directory, "Unknown");
+    int fd = create_fd_with_unoccupied_file_name(directory, storage->path_for_document_fd, sizeof storage->path_for_document_fd);
 
     if (fd == -1) {
         anvi_log_error("Failed to create file descript for persisting the document: %s", strerror(errno));

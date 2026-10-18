@@ -1,5 +1,8 @@
 #define _GNU_SOURCE
 
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <sys/mman.h>
 #include <unistd.h>
@@ -13,11 +16,15 @@
 #include <anvi/keyboard.h>
 #include <anvi/session_setup.h>
 #include <anvi/config.h>
+#include <anvi/save_dialog.h>
 
 
 int main(void) {
     struct anvi_state state = {0};
     struct anvi_config config = {0};
+
+    bool show_save_dialog = false;
+    char recovery_path[MAX_FILE_PATH_LEN] = {0};
 
     anvi_config_set_defaults(&config);
     if (anvi_config_load(&config) == EXIT_FAILURE) {
@@ -59,12 +66,35 @@ int main(void) {
         }
 
         if (should_break) {
+            bool completed_writing = state.phase == ANVI_FINISHED_PHASE;
+
             wl_display_roundtrip(state.display);
-            write_bytes_to_document_fd(state.storage, state.document);
+            if (write_bytes_to_document_fd(state.storage, state.document) == EXIT_FAILURE) {
+                anvi_log_error("Failed to write the final document to the recovery file.");
+                destroy_anvi_state(&state);
+                return EXIT_FAILURE;
+            }
+
+            if (completed_writing) {
+                int path_length = snprintf(recovery_path, sizeof recovery_path, "%s", state.storage->path_for_document_fd);
+
+                if (path_length < 0 || (size_t)path_length >= sizeof recovery_path) {
+                    anvi_log_error("The recovery path is too long to pass to the dialog.");
+
+                    destroy_anvi_state(&state);
+                    return EXIT_FAILURE;
+                }
+
+                show_save_dialog = true;
+            }
             break;
         }
     }
 
     destroy_anvi_state(&state);
+
+    if (show_save_dialog) {
+        return anvi_show_save_dialog(recovery_path);
+    }
 	return EXIT_SUCCESS;
 }
