@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 
+#include <glib.h>
 #include <string.h>
 #include <time.h>
 #include <fcntl.h>
@@ -16,7 +17,7 @@
 
 
 static int
-create_fd_with_unoccupied_file_name(char *dir_path, char* created_path, size_t created_path_capacity) {
+create_fd_with_unoccupied_file_name(char *recovery_directory, const char* final_save_directory, char* created_path, size_t created_path_capacity) {
     time_t now = time(NULL);
     struct tm local_time;
 
@@ -47,9 +48,25 @@ create_fd_with_unoccupied_file_name(char *dir_path, char* created_path, size_t c
             return -1;
         }
 
-        int path_length = snprintf(created_path, created_path_capacity, "%s/%s", dir_path, name);
+        char final_path[ANVI_STORAGE_PATH_CAPACITY];
+        int final_path_length = snprintf(final_path, sizeof final_path, "%s/%s", final_save_directory, name);
 
-        if (path_length < 0 || (size_t)path_length >= created_path_capacity) {
+        if (final_path_length < 0 || (size_t)final_path_length >= sizeof final_path) {
+            errno = ENAMETOOLONG;
+            return -1;
+        }
+
+        if (access(final_path, F_OK) == 0) {
+            continue;
+        }
+
+        if (errno != ENOENT) {
+            return -1;
+        }
+
+        int recovery_path_length = snprintf(created_path, created_path_capacity, "%s/%s", recovery_directory, name);
+
+        if (recovery_path_length < 0 || (size_t)recovery_path_length >= created_path_capacity) {
             errno = ENAMETOOLONG;
             return -1;
         }
@@ -70,62 +87,46 @@ create_fd_with_unoccupied_file_name(char *dir_path, char* created_path, size_t c
 }
 
 static int
-create_directory(char *path) {
-    if (mkdir(path, 0700) == -1) {
-        if (errno != EEXIST) {
-            anvi_log_error("Wasn't able to create the directory for the text file.");
-            return EXIT_FAILURE;
-        }
-
-        struct stat st;
-        if (stat(path, &st) == -1 || !S_ISDIR(st.st_mode)) {
-            anvi_log_error("Something that is not a directory already exists in this path.");
-            return EXIT_FAILURE;
-        }
-    }
-    return EXIT_SUCCESS;
-}
-
-static int
-set_default_save_path(char *directory) {
-    const char *home = getenv("HOME"); 
-    if (home == NULL || home[0] == '\0') {
-        anvi_log_error("Couldn't figure out what the user's home directory is.");
+create_directory(const char *path) {
+    if (g_mkdir_with_parents(path, 0700) == -1) {
+        anvi_log_error("Could not create directory %s: %s", path, strerror(errno));
         return EXIT_FAILURE;
     }
-
-    
-    const int n = snprintf(directory, MAX_FILE_PATH_LEN, "%s/anvi", home);
-    if (n < 0) {
-        return EXIT_FAILURE;
-    }
-
     return EXIT_SUCCESS;
 }
 
 int
-create_document_fd(struct anvi_storage *storage, char *save_path) {
-    char directory[4096];
+create_document_fd(struct anvi_storage *storage, const char *save_path) {
     if (save_path == NULL || save_path[0] == '\0') {
-        if (set_default_save_path(directory) == EXIT_FAILURE) {
-            return EXIT_FAILURE;
-        }
-    } else {
-        strcpy(directory, save_path);
-    }
+        anvi_log_error("The final save directory is empty.");
+        return EXIT_FAILURE;
+    } 
 
-    if (create_directory(directory) == EXIT_FAILURE) {
+    if (create_directory(save_path) == EXIT_FAILURE) {
         return EXIT_FAILURE;
     }
 
-    int fd = create_fd_with_unoccupied_file_name(directory, storage->path_for_document_fd, sizeof storage->path_for_document_fd);
+    char *recovery_directory = g_build_filename(g_get_user_state_dir(), "anvi", "recovery", NULL);
+
+    if (create_directory(recovery_directory) == EXIT_FAILURE) {
+        g_free(recovery_directory);
+        return EXIT_FAILURE;
+    }
+
+    int fd = create_fd_with_unoccupied_file_name(recovery_directory, save_path, storage->path_for_document_fd, sizeof storage->path_for_document_fd);
 
     if (fd == -1) {
-        anvi_log_error("Failed to create file descript for persisting the document: %s", strerror(errno));
+        int saved_errno = errno;
+
+        g_free(recovery_directory);
+
+        anvi_log_error("Failed to create the recovery file: %s", strerror(saved_errno));
         return EXIT_FAILURE;
     }
 
     storage->document_fd = fd;
+
+    anvi_log_info("Recovery document created at %s", storage->path_for_document_fd);
 
     return EXIT_SUCCESS;
 }

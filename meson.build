@@ -15,6 +15,7 @@ pango = dependency('pango')
 pangocairo = dependency('pangocairo')
 libgrapheme = dependency('libgrapheme')
 gtk4 = dependency('gtk4', version: '>=4.10', include_type: 'system')
+glib = dependency('glib-2.0', version: '>=2.72', include_type: 'system')
 
 wayland_client = dependency('wayland-client', version: '>=1.20')
 wayland_protocols = dependency('wayland-protocols')
@@ -86,6 +87,7 @@ executable(
     pangocairo,
     libgrapheme,
     gtk4,
+    glib,
   ]
 )
 

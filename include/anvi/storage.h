@@ -2,17 +2,19 @@
 #define STORAGE_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 struct anvi_text_buffer;
 
-constexpr int32_t SAVE_EVERY_MS = 5000; // Every second!
+constexpr size_t ANVI_STORAGE_PATH_CAPACITY = 4096;
+constexpr int32_t SAVE_EVERY_MS = 5000;
 struct anvi_storage {
     int document_fd;
-    char path_for_document_fd[4096];
+    char path_for_document_fd[ANVI_STORAGE_PATH_CAPACITY];
     int save_timer_fd;
 };
 
-int create_document_fd(struct anvi_storage *storage, char *save_path);
+int create_document_fd(struct anvi_storage *storage, const char *save_path);
 int write_bytes_to_document_fd(struct anvi_storage *storage, struct anvi_text_buffer *doc);
 int create_save_timer_fd(struct anvi_storage *storage);
 int start_save_timer(struct anvi_storage *storage);

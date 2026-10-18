@@ -24,7 +24,7 @@ int main(void) {
     struct anvi_config config = {0};
 
     bool show_save_dialog = false;
-    char recovery_path[MAX_FILE_PATH_LEN] = {0};
+    char recovery_path[ANVI_STORAGE_PATH_CAPACITY] = {0};
 
     if (anvi_config_set_defaults(&config) == EXIT_FAILURE) {
         return EXIT_FAILURE;
