@@ -68,7 +68,7 @@ trim_whitespace(char *text) {
 }
 
 static void
-get_config_line_result(char *line, struct anvi_config_line_result *res) { // [x, y) interval
+get_config_line_result(char *line, struct anvi_config_line_result *res) {
     res->ok = false;
 
     char *text = trim_whitespace(line);

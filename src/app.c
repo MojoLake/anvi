@@ -159,7 +159,7 @@ number_in_text_buffer(struct anvi_text_buffer *tb) {
     }
     constexpr size_t chars_to_numbers_multiplier = 10;
     if (ret * chars_to_numbers_multiplier >= MAXIMUM_NUMBER_OF_CHARS) {
-        return -1; // Would not fit the buffer probably. 
+        return -1; // Would not fit the buffer, probably. 
     }
     return ret;
 }
@@ -182,7 +182,7 @@ handle_configuration_phase_enter(struct anvi_state *state) {
         state->words_to_exit = x;
         state->phase = ANVI_NORMAL_PHASE;
     }
-    // In both cases the text buffer should be reset.
+    // In both cases the prompt input should be reset.
     anvi_text_buffer_reset(state->prompt_input);
 }
 
