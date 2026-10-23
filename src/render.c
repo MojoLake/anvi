@@ -32,7 +32,7 @@ draw_word_counter(struct anvi_state *state) {
 
 static void
 draw_enough_words_text_button(struct anvi_renderer *renderer) {
-    char text[] = "Click here or ctrl + q to finish.";
+    char text[] = "Enough words to escape! Press ctrl + q to finish.";
     anvi_pangocairo_draw_text_starting_at(renderer, text, ENOUGH_WORDS_TEXT_BUTTON_X, ENOUGH_WORDS_TEXT_BUTTON_Y);
 }
 
