@@ -7,4 +7,6 @@
 
 void anvi_pangocairo_draw_cursor(size_t cursor_bytes, cairo_t *cr, PangoLayout *layout, size_t dx, size_t dy);
 
+void anvi_pangocairo_draw_text_starting_at(cairo_t *cr, PangoLayout *layout, char* text, const size_t x, const size_t y);
+
 #endif

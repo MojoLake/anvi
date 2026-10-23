@@ -16,14 +16,6 @@ static constexpr size_t PADDING_TOP = 40;
 static constexpr size_t PADDING_BOTTOM = 20;
 
 
-static void
-draw_text_starting_at(cairo_t *cr, PangoLayout *layout, char* text, const size_t x, const size_t y) {
-
-    pango_layout_set_text(layout, text, -1);
-    cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-    cairo_move_to(cr, x, y);
-    pango_cairo_show_layout(cr, layout);
-}
 
 static void
 draw_word_counter(struct anvi_state *state, cairo_t *cr, PangoLayout *layout) {
@@ -31,14 +23,14 @@ draw_word_counter(struct anvi_state *state, cairo_t *cr, PangoLayout *layout) {
 
     char text[15];
     sprintf(text, "%ld / %ld", wc, state->words_to_exit);
-    draw_text_starting_at(cr, layout, text, 10, 10);
+    anvi_pangocairo_draw_text_starting_at(cr, layout, text, 10, 10);
     pango_layout_set_text(layout, text, -1);
 }
 
 static void
 draw_enough_words_text_button(cairo_t *cr, PangoLayout *layout) {
     char text[] = "Click here or ctrl + q to finish.";
-    draw_text_starting_at(cr, layout, text, 100, 10);
+    anvi_pangocairo_draw_text_starting_at(cr, layout, text, 100, 10);
     pango_layout_set_text(layout, text, -1);
 }
 
@@ -125,7 +117,7 @@ draw_start_configuration_phase(struct anvi_state *state, cairo_t *cr) {
 
     start_string_combined combined = construct_start_configuration_phase_text(state);
 
-    draw_text_starting_at(cr, state->layout, combined.data, 10, 10);
+    anvi_pangocairo_draw_text_starting_at(cr, state->layout, combined.data, 10, 10);
     anvi_pangocairo_draw_cursor(combined.prompt_text_length + state->prompt_input->cursor_bytes, cr, state->layout, 10, 10);
 }
 
@@ -177,7 +169,7 @@ draw_document(struct anvi_state *state, struct anvi_output *output, cairo_t *cr)
 
     cairo_translate(cr, MARGIN_WIDTH, top - output->scroll_y);
 
-    draw_text_starting_at(cr, state->layout, state->document->data, 0, 0);
+    anvi_pangocairo_draw_text_starting_at(cr, state->layout, state->document->data, 0, 0);
     anvi_pangocairo_draw_cursor(state->document->cursor_bytes, cr, state->layout, 0, 0);
 
     cairo_restore(cr);
@@ -198,7 +190,7 @@ draw_normal_phase(struct anvi_state *state, struct anvi_output *output, cairo_t 
 static void
 draw_finish_phase(struct anvi_state *state, cairo_t *cr) {
     finish_string_combined combined = construct_finish_phase_text(state);
-    draw_text_starting_at(cr, state->layout, combined.data, 10, 10);
+    anvi_pangocairo_draw_text_starting_at(cr, state->layout, combined.data, 10, 10);
 }
 
 static void
