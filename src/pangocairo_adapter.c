@@ -57,3 +57,21 @@ anvi_pangocairo_begin_frame(struct anvi_state *state, const size_t document_widt
     create_or_update_pango_layout(state, cr);
     setup_pango_layout_for_current_output(document_width, state->layout);
 }
+
+
+cursor_top_and_bottom
+get_cursor_top_and_bottom(PangoLayout *layout, const char *data, const size_t cursor_bytes) {
+    pango_layout_set_text(layout, data, -1);
+    PangoRectangle cursor;
+    pango_layout_get_cursor_pos(layout, (int)cursor_bytes, &cursor, NULL);
+    
+    const double cursor_top = cursor.y / (double)PANGO_SCALE;
+    const double cursor_height = cursor.height / (double)PANGO_SCALE;
+    const double cursor_bottom = cursor_top + cursor_height;
+
+    cursor_top_and_bottom result;
+    result.cursor_top = cursor_top;
+    result.cursor_bottom = cursor_bottom;
+
+    return result;
+}

@@ -16,7 +16,6 @@ static constexpr size_t PADDING_TOP = 40;
 static constexpr size_t PADDING_BOTTOM = 20;
 
 
-
 static void
 draw_word_counter(struct anvi_state *state, cairo_t *cr, PangoLayout *layout) {
     const size_t wc = anvi_text_buffer_word_count(state->document); 
@@ -31,7 +30,6 @@ draw_enough_words_text_button(cairo_t *cr, PangoLayout *layout) {
     char text[] = "Click here or ctrl + q to finish.";
     anvi_pangocairo_draw_text_starting_at(cr, layout, text, 100, 10);
 }
-
 
 static constexpr size_t MAX_COMBINED_LEN = 256; // Our prompt + user typed word count can never be longer than this.
 typedef struct {
@@ -116,13 +114,11 @@ draw_start_configuration_phase(struct anvi_state *state, cairo_t *cr) {
 static double
 calculate_scroll_y(const struct anvi_state *state, PangoLayout* layout, double current_scroll_y, const double viewport_height) {
 
-    pango_layout_set_text(layout, state->document->data, -1);
-    PangoRectangle cursor;
-    pango_layout_get_cursor_pos(layout, (int)state->document->cursor_bytes, &cursor, NULL);
+    
+    cursor_top_and_bottom res = get_cursor_top_and_bottom(layout, state->document->data, state->document->cursor_bytes);
 
-    const double cursor_top = cursor.y / (double)PANGO_SCALE;
-    const double cursor_height = cursor.height / (double)PANGO_SCALE;
-    const double cursor_bottom = cursor_top + cursor_height;
+    const double cursor_bottom = res.cursor_bottom;
+    const double cursor_top = res.cursor_top;
 
     if (cursor_bottom > current_scroll_y + viewport_height) {
         current_scroll_y = cursor_bottom - viewport_height;

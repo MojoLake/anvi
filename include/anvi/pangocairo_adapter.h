@@ -13,4 +13,13 @@ void anvi_pangocairo_draw_text_starting_at(cairo_t *cr, PangoLayout *layout, cha
 void
 anvi_pangocairo_begin_frame(struct anvi_state *state, const size_t document_width, cairo_t *cr);
 
+typedef struct {
+    double cursor_top;
+    double cursor_bottom;
+} cursor_top_and_bottom;
+
+
+cursor_top_and_bottom
+get_cursor_top_and_bottom(PangoLayout *layout, const char *data, const size_t cursor_bytes);
+
 #endif
