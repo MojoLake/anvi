@@ -33,6 +33,8 @@ struct anvi_output {
     uint32_t width;
     uint32_t height;
 
+    double scroll_y;
+
     struct anvi_output *next;
 };
 
