@@ -24,14 +24,12 @@ draw_word_counter(struct anvi_state *state, cairo_t *cr, PangoLayout *layout) {
     char text[15];
     sprintf(text, "%ld / %ld", wc, state->words_to_exit);
     anvi_pangocairo_draw_text_starting_at(cr, layout, text, 10, 10);
-    pango_layout_set_text(layout, text, -1);
 }
 
 static void
 draw_enough_words_text_button(cairo_t *cr, PangoLayout *layout) {
     char text[] = "Click here or ctrl + q to finish.";
     anvi_pangocairo_draw_text_starting_at(cr, layout, text, 100, 10);
-    pango_layout_set_text(layout, text, -1);
 }
 
 static void
