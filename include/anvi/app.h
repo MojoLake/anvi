@@ -26,6 +26,8 @@ enum anvi_input_type {
     ANVI_INPUT_BACKSPACE,
     ANVI_INPUT_LEFT,
     ANVI_INPUT_RIGHT,
+    ANVI_INPUT_UP,
+    ANVI_INPUT_DOWN,
 };
 
 constexpr size_t ANVI_INPUT_DATA_CAPACITY = 64;
@@ -50,6 +52,9 @@ struct anvi_state {
 
     struct anvi_text_buffer *prompt_input;
     struct anvi_text_buffer *document;
+
+    int preferred_cursor_x; // Pango units
+    bool preferred_cursor_x_valid;
 
     struct anvi_storage *storage; 
 

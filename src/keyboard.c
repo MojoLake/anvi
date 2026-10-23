@@ -109,6 +109,10 @@ keysym_to_anvi_input_type(xkb_keysym_t keysym) {
             return ANVI_INPUT_BACKSPACE;
         case XKB_KEY_Return:
             return ANVI_INPUT_ENTER;
+        case XKB_KEY_Up:
+            return ANVI_INPUT_UP;
+        case XKB_KEY_Down:
+            return ANVI_INPUT_DOWN;
     }
     // Default to text.
     return ANVI_INPUT_TEXT;

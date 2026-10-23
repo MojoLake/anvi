@@ -10,6 +10,42 @@
 #include <anvi/log.h>
 #include <anvi/text_buffer.h>
 
+static void
+move_cursor_vertically(struct anvi_state *state, int direction) {
+    if (state->phase != ANVI_NORMAL_PHASE || state->layout == NULL) {
+        return;
+    }
+
+    struct anvi_text_buffer *doc = state->document;
+    PangoLayout *layout = state->layout;
+
+    pango_layout_set_text(layout, doc->data, -1);
+
+    int current_line;
+    int current_x;
+    pango_layout_index_to_line_x(layout, (int)doc->cursor_bytes, false, &current_line, &current_x);
+
+    if (!state->preferred_cursor_x_valid) {
+        state->preferred_cursor_x = current_x;
+        state->preferred_cursor_x_valid = true;
+    }
+
+    const int target_line = current_line + direction;
+    if (target_line < 0 || target_line >= pango_layout_get_line_count(layout)) {
+        return;
+    }
+
+    PangoLayoutLine *line = pango_layout_get_line_readonly(layout, target_line);
+
+    int index;
+    int trailing;
+    pango_layout_line_x_to_index(line, state->preferred_cursor_x, &index, &trailing);
+
+    const char *position = g_utf8_offset_to_pointer(doc->data + index, trailing);
+
+    doc->cursor_bytes = (size_t)(position - doc->data);
+}
+
 int
 poll_for_events_and_timer_completion(struct anvi_state *state) {
 
@@ -237,6 +273,12 @@ handle_input_text_when_ctrl_down(struct anvi_state *state, struct anvi_input *in
 
 void
 anvi_app_handle_input(struct anvi_state *state, struct anvi_input *input) {
+
+    const bool vertical_movement = input->type == ANVI_INPUT_UP || input->type == ANVI_INPUT_DOWN;
+
+    if (!vertical_movement) {
+        state->preferred_cursor_x_valid = false;
+    }
     // Most inputs do the same action no matter what phase.
     // Let's thus first match on input->type and on some cases
     // have the handler function check the phase.
@@ -269,6 +311,12 @@ anvi_app_handle_input(struct anvi_state *state, struct anvi_input *input) {
                 break;
             case ANVI_INPUT_ENTER:
                 handle_enter(state);
+                break;
+            case ANVI_INPUT_UP:
+                move_cursor_vertically(state, -1);
+                break;
+            case ANVI_INPUT_DOWN:
+                move_cursor_vertically(state, +1);
                 break;
         }
     }
