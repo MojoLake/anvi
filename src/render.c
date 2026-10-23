@@ -9,29 +9,11 @@
 #include <anvi/output.h>
 #include <anvi/buffer.h>
 #include <anvi/text_buffer.h>
+#include <anvi/pangocairo_adapter.h>
 
 static constexpr size_t MARGIN_WIDTH = 50;
 static constexpr size_t PADDING_TOP = 40;
 static constexpr size_t PADDING_BOTTOM = 20;
-
-static void
-draw_cursor_at_pos_with_height(double x, double y, double h, cairo_t *cr) {
-    cairo_move_to(cr, x, y);
-    cairo_line_to(cr, x, y + h);
-    cairo_stroke(cr);
-}
-
-static void
-draw_cursor(size_t cursor_bytes, cairo_t *cr, PangoLayout *layout, size_t dx, size_t dy) {
-
-    PangoRectangle pos;
-    pango_layout_get_cursor_pos(layout, cursor_bytes, &pos, NULL);
-
-    const double x = dx + pos.x / (double)PANGO_SCALE;
-    const double y = dy + pos.y / (double)PANGO_SCALE;
-    const double h = pos.height / (double)PANGO_SCALE;
-    draw_cursor_at_pos_with_height(x, y, h, cr);
-}
 
 
 static void
@@ -144,7 +126,7 @@ draw_start_configuration_phase(struct anvi_state *state, cairo_t *cr) {
     start_string_combined combined = construct_start_configuration_phase_text(state);
 
     draw_text_starting_at(cr, state->layout, combined.data, 10, 10);
-    draw_cursor(combined.prompt_text_length + state->prompt_input->cursor_bytes, cr, state->layout, 10, 10);
+    anvi_pangocairo_draw_cursor(combined.prompt_text_length + state->prompt_input->cursor_bytes, cr, state->layout, 10, 10);
 }
 
 static double
@@ -196,7 +178,7 @@ draw_document(struct anvi_state *state, struct anvi_output *output, cairo_t *cr)
     cairo_translate(cr, MARGIN_WIDTH, top - output->scroll_y);
 
     draw_text_starting_at(cr, state->layout, state->document->data, 0, 0);
-    draw_cursor(state->document->cursor_bytes, cr, state->layout, 0, 0);
+    anvi_pangocairo_draw_cursor(state->document->cursor_bytes, cr, state->layout, 0, 0);
 
     cairo_restore(cr);
 }

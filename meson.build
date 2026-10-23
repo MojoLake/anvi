@@ -75,6 +75,7 @@ executable(
     'src/storage.c',
     'src/config.c',
     'src/save_dialog.c',
+    'src/pangocairo_adapter.c',
     session_lock_header,
     session_lock_code,
   ],
