@@ -15,6 +15,11 @@ static constexpr size_t MARGIN_WIDTH = 50;
 static constexpr size_t PADDING_TOP = 40;
 static constexpr size_t PADDING_BOTTOM = 20;
 
+static constexpr size_t WORD_COUNTER_X = 10;
+static constexpr size_t WORD_COUNTER_Y = 10;
+
+static constexpr size_t ENOUGH_WORDS_TEXT_BUTTON_X = WORD_COUNTER_X + 150;
+static constexpr size_t ENOUGH_WORDS_TEXT_BUTTON_Y = WORD_COUNTER_Y;
 
 static void
 draw_word_counter(struct anvi_state *state) {
@@ -22,13 +27,13 @@ draw_word_counter(struct anvi_state *state) {
 
     char text[15];
     sprintf(text, "%ld / %ld", wc, state->words_to_exit);
-    anvi_pangocairo_draw_text_starting_at(state->renderer, text, 10, 10);
+    anvi_pangocairo_draw_text_starting_at(state->renderer, text, WORD_COUNTER_X, WORD_COUNTER_Y);
 }
 
 static void
 draw_enough_words_text_button(struct anvi_renderer *renderer) {
     char text[] = "Click here or ctrl + q to finish.";
-    anvi_pangocairo_draw_text_starting_at(renderer, text, 100, 10);
+    anvi_pangocairo_draw_text_starting_at(renderer, text, ENOUGH_WORDS_TEXT_BUTTON_X, ENOUGH_WORDS_TEXT_BUTTON_Y);
 }
 
 static constexpr size_t MAX_COMBINED_LEN = 256; // Our prompt + user typed word count can never be longer than this.
