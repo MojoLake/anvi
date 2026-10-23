@@ -139,6 +139,7 @@ draw_document(struct anvi_state *state, struct anvi_output *output, cairo_t *cr)
 
     PangoLayout *layout = state->layout;
 
+    const double left = MARGIN_WIDTH;
     const double top = PADDING_TOP;
     const double bottom_padding = PADDING_BOTTOM;
     const double viewport_height = (double)output->height - top - bottom_padding;
@@ -150,17 +151,12 @@ draw_document(struct anvi_state *state, struct anvi_output *output, cairo_t *cr)
 
     output->scroll_y = calculate_scroll_y(state, layout, output->scroll_y, viewport_height);
 
-    cairo_save(cr);
-
-    cairo_rectangle(cr, MARGIN_WIDTH, top, viewport_width, viewport_height);
-    cairo_clip(cr);
-
-    cairo_translate(cr, MARGIN_WIDTH, top - output->scroll_y);
+    anvi_pangocairo_begin_document_area(cr, left, top, viewport_width, viewport_height, output->scroll_y);
 
     anvi_pangocairo_draw_text_starting_at(cr, state->layout, state->document->data, 0, 0);
     anvi_pangocairo_draw_cursor(state->document->cursor_bytes, cr, state->layout, 0, 0);
 
-    cairo_restore(cr);
+    anvi_pangocairo_end_document_area(cr);
 }
 
 static void

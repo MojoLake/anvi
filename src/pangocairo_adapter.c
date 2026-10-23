@@ -75,3 +75,20 @@ get_cursor_top_and_bottom(PangoLayout *layout, const char *data, const size_t cu
 
     return result;
 }
+
+void
+anvi_pangocairo_begin_document_area(cairo_t *cr, const double x, const double y, const double width, const double height, const double scroll_y) {
+
+    cairo_save(cr);
+
+    cairo_rectangle(cr, x, y, width, height);
+    cairo_clip(cr);
+
+    cairo_translate(cr, x, y - scroll_y);
+}
+
+
+void
+anvi_pangocairo_end_document_area(cairo_t *cr) {
+    cairo_restore(cr);
+}

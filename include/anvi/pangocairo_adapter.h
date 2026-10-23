@@ -22,4 +22,10 @@ typedef struct {
 cursor_top_and_bottom
 get_cursor_top_and_bottom(PangoLayout *layout, const char *data, const size_t cursor_bytes);
 
+void
+anvi_pangocairo_begin_document_area(cairo_t *cr, const double x, const double y, const double width, const double height, const double scroll_y);
+
+void
+anvi_pangocairo_end_document_area(cairo_t *cr);
+
 #endif
