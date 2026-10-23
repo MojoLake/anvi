@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-constexpr size_t TEXT_BUFFER_SIZE = 100000; // 100k
+constexpr size_t TEXT_BUFFER_SIZE = 1000000; // 1M
 constexpr size_t MAXIMUM_NUMBER_OF_CHARS = TEXT_BUFFER_SIZE;
 
 enum anvi_cursor_direction {
