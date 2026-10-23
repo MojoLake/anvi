@@ -83,12 +83,6 @@ normal_phase_exit_condition_fulfilled(struct anvi_state *state) {
     if (anvi_text_buffer_word_count(doc) >= state->words_to_exit) {
         return true;
     }
-    if (doc->length_bytes < 2) return false;
-    for (size_t i = 0; i < doc->length_bytes - 2; ++i) {
-        if (doc->data[i] == '1' && doc->data[i + 1] == '2' && doc->data[i + 2] == '3') {
-            return true;
-        }
-    }
     return false;
 }
 
@@ -97,12 +91,6 @@ start_phase_exit_condtion_fulfilled(struct anvi_state *state) {
     if (state->user_wants_to_quit) {
         state->user_wants_to_quit = false;
         return true;
-    }
-    struct anvi_text_buffer *pi = state->prompt_input;
-    for (size_t i = 0; i < pi->length_bytes; ++i) {
-        // if (pi->data[i] == 'q') {
-        //     return true;
-        // }
     }
     return false;
 }
