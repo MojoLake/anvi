@@ -1,3 +1,4 @@
+#include <anvi/app.h>
 #include <anvi/pangocairo_adapter.h>
 
 #include <cairo.h>
@@ -29,4 +30,30 @@ anvi_pangocairo_draw_text_starting_at(cairo_t *cr, PangoLayout *layout, char* te
     cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
     cairo_move_to(cr, x, y);
     pango_cairo_show_layout(cr, layout);
+}
+
+static void
+create_or_update_pango_layout(struct anvi_state *state, cairo_t *cr) {
+    if (state->layout == NULL) {
+        state->layout = pango_cairo_create_layout(cr);
+        PangoFontDescription *font = pango_font_description_from_string("Sans 16");
+        pango_layout_set_font_description(state->layout, font);
+        pango_font_description_free(font);
+    } else {
+        pango_cairo_update_layout(cr, state->layout);
+    }
+}
+
+static void
+setup_pango_layout_for_current_output(const size_t width, PangoLayout *layout) {
+
+    pango_layout_set_width(layout, width * PANGO_SCALE);
+    pango_layout_set_wrap(layout, PANGO_WRAP_WORD_CHAR);
+}
+
+void
+anvi_pangocairo_begin_frame(struct anvi_state *state, const size_t document_width, cairo_t *cr) {
+
+    create_or_update_pango_layout(state, cr);
+    setup_pango_layout_for_current_output(document_width, state->layout);
 }

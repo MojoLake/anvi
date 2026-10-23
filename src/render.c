@@ -32,12 +32,6 @@ draw_enough_words_text_button(cairo_t *cr, PangoLayout *layout) {
     anvi_pangocairo_draw_text_starting_at(cr, layout, text, 100, 10);
 }
 
-static void
-setup_pango_layout_for_current_output(struct anvi_output *output, PangoLayout *layout) {
-
-    pango_layout_set_width(layout, (output->width - 2 * MARGIN_WIDTH) * PANGO_SCALE);
-    pango_layout_set_wrap(layout, PANGO_WRAP_WORD_CHAR);
-}
 
 static constexpr size_t MAX_COMBINED_LEN = 256; // Our prompt + user typed word count can never be longer than this.
 typedef struct {
@@ -191,17 +185,6 @@ draw_finish_phase(struct anvi_state *state, cairo_t *cr) {
     anvi_pangocairo_draw_text_starting_at(cr, state->layout, combined.data, 10, 10);
 }
 
-static void
-create_or_update_pango_layout(struct anvi_state *state, cairo_t *cr) {
-    if (state->layout == NULL) {
-        state->layout = pango_cairo_create_layout(cr);
-        PangoFontDescription *font = pango_font_description_from_string("Sans 16");
-        pango_layout_set_font_description(state->layout, font);
-        pango_font_description_free(font);
-    } else {
-        pango_cairo_update_layout(cr, state->layout);
-    }
-}
 
 static void
 render_to_buffer(struct anvi_state *state, struct anvi_output *output, struct anvi_buffer *buffer) {
@@ -211,8 +194,8 @@ render_to_buffer(struct anvi_state *state, struct anvi_output *output, struct an
 
     cairo_t *cr = cairo_create(buffer->cairo_surface);
 
-    create_or_update_pango_layout(state, cr);
-    setup_pango_layout_for_current_output(output, state->layout);
+    const size_t document_width = output->width - 2 * MARGIN_WIDTH;
+    anvi_pangocairo_begin_frame(state, document_width, cr);
 
     switch (state->phase) {
         case ANVI_START_CONFIGURATION_PHASE:
