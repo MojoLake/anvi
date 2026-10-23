@@ -18,8 +18,6 @@ anvi_pangocairo_begin_frame(struct anvi_renderer *renderer, cairo_surface_t *cai
 void
 anvi_pangocairo_end_frame(struct anvi_renderer *renderer, cairo_surface_t *cairo_surface);
 
-void
-anvi_pangocairo_free_renderer(struct anvi_renderer *renderer);
 
 typedef struct {
     double cursor_top;
@@ -41,5 +39,11 @@ anvi_pangocairo_move_cursor_vertically(struct anvi_renderer *renderer, const cha
 
 void
 anvi_pangocairo_end_vertical_movement(struct anvi_renderer *renderer);
+
+struct anvi_renderer *
+anvi_pangocairo_renderer_create(void);
+
+void
+anvi_pangocairo_free_renderer(struct anvi_renderer *renderer);
 
 #endif

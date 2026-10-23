@@ -263,6 +263,11 @@ exit_with_failure_and_message_and_cleanup_state(char* msg, struct anvi_state *st
 int
 setup_initial_state(struct anvi_state *state, struct anvi_config *config) {
 
+    state->renderer = anvi_pangocairo_renderer_create();
+    if (state->renderer == NULL) {
+        return exit_with_failure_and_message("Failed to create renderer.");
+    }
+
     state->document = anvi_text_buffer_allocate_and_initialise();
     if (state->document == NULL) {
         return exit_with_failure_and_message("Failed to allocate memory for document text buffer.");
