@@ -53,12 +53,9 @@ struct anvi_state {
     struct anvi_text_buffer *prompt_input;
     struct anvi_text_buffer *document;
 
-    int preferred_cursor_x; // Pango units
-    bool preferred_cursor_x_valid;
-
     struct anvi_storage *storage; 
 
-    PangoLayout *layout;
+    struct anvi_renderer *renderer;
 
     enum anvi_phase phase;
     bool start_phase_include_invalid_input_text;

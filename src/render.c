@@ -17,18 +17,18 @@ static constexpr size_t PADDING_BOTTOM = 20;
 
 
 static void
-draw_word_counter(struct anvi_state *state, cairo_t *cr, PangoLayout *layout) {
+draw_word_counter(struct anvi_state *state) {
     const size_t wc = anvi_text_buffer_word_count(state->document); 
 
     char text[15];
     sprintf(text, "%ld / %ld", wc, state->words_to_exit);
-    anvi_pangocairo_draw_text_starting_at(cr, layout, text, 10, 10);
+    anvi_pangocairo_draw_text_starting_at(state->renderer, text, 10, 10);
 }
 
 static void
-draw_enough_words_text_button(cairo_t *cr, PangoLayout *layout) {
+draw_enough_words_text_button(struct anvi_renderer *renderer) {
     char text[] = "Click here or ctrl + q to finish.";
-    anvi_pangocairo_draw_text_starting_at(cr, layout, text, 100, 10);
+    anvi_pangocairo_draw_text_starting_at(renderer, text, 100, 10);
 }
 
 static constexpr size_t MAX_COMBINED_LEN = 256; // Our prompt + user typed word count can never be longer than this.
@@ -103,19 +103,19 @@ construct_finish_phase_text(struct anvi_state *state) {
 
 
 static void
-draw_start_configuration_phase(struct anvi_state *state, cairo_t *cr) {
+draw_start_configuration_phase(struct anvi_state *state) {
 
     start_string_combined combined = construct_start_configuration_phase_text(state);
 
-    anvi_pangocairo_draw_text_starting_at(cr, state->layout, combined.data, 10, 10);
-    anvi_pangocairo_draw_cursor(combined.prompt_text_length + state->prompt_input->cursor_bytes, cr, state->layout, 10, 10);
+    anvi_pangocairo_draw_text_starting_at(state->renderer, combined.data, 10, 10);
+    anvi_pangocairo_draw_cursor(state->renderer, combined.prompt_text_length + state->prompt_input->cursor_bytes, 10, 10);
 }
 
 static double
-calculate_scroll_y(const struct anvi_state *state, PangoLayout* layout, double current_scroll_y, const double viewport_height) {
+calculate_scroll_y(const struct anvi_state *state, double current_scroll_y, const double viewport_height) {
 
     
-    cursor_top_and_bottom res = get_cursor_top_and_bottom(layout, state->document->data, state->document->cursor_bytes);
+    cursor_top_and_bottom res = get_cursor_top_and_bottom(state->renderer, state->document->data, state->document->cursor_bytes);
 
     const double cursor_bottom = res.cursor_bottom;
     const double cursor_top = res.cursor_top;
@@ -135,9 +135,7 @@ calculate_scroll_y(const struct anvi_state *state, PangoLayout* layout, double c
 }
 
 static void
-draw_document(struct anvi_state *state, struct anvi_output *output, cairo_t *cr) {
-
-    PangoLayout *layout = state->layout;
+draw_document(struct anvi_state *state, struct anvi_output *output) {
 
     const double left = MARGIN_WIDTH;
     const double top = PADDING_TOP;
@@ -149,32 +147,32 @@ draw_document(struct anvi_state *state, struct anvi_output *output, cairo_t *cr)
         return;
     }
 
-    output->scroll_y = calculate_scroll_y(state, layout, output->scroll_y, viewport_height);
+    output->scroll_y = calculate_scroll_y(state, output->scroll_y, viewport_height);
 
-    anvi_pangocairo_begin_document_area(cr, left, top, viewport_width, viewport_height, output->scroll_y);
+    anvi_pangocairo_begin_document_area(state->renderer, left, top, viewport_width, viewport_height, output->scroll_y);
 
-    anvi_pangocairo_draw_text_starting_at(cr, state->layout, state->document->data, 0, 0);
-    anvi_pangocairo_draw_cursor(state->document->cursor_bytes, cr, state->layout, 0, 0);
+    anvi_pangocairo_draw_text_starting_at(state->renderer, state->document->data, 0, 0);
+    anvi_pangocairo_draw_cursor(state->renderer, state->document->cursor_bytes, 0, 0);
 
-    anvi_pangocairo_end_document_area(cr);
+    anvi_pangocairo_end_document_area(state->renderer);
 }
 
 static void
-draw_normal_phase(struct anvi_state *state, struct anvi_output *output, cairo_t *cr) {
+draw_normal_phase(struct anvi_state *state, struct anvi_output *output) {
 
-    draw_document(state, output, cr);
-    draw_word_counter(state, cr, state->layout);
+    draw_document(state, output);
+    draw_word_counter(state);
 
     const size_t wc = anvi_text_buffer_word_count(state->document);
     if (wc >= state->words_to_exit) {
-        draw_enough_words_text_button(cr, state->layout);
+        draw_enough_words_text_button(state->renderer);
     }
 }
 
 static void
-draw_finish_phase(struct anvi_state *state, cairo_t *cr) {
+draw_finish_phase(struct anvi_state *state) {
     finish_string_combined combined = construct_finish_phase_text(state);
-    anvi_pangocairo_draw_text_starting_at(cr, state->layout, combined.data, 10, 10);
+    anvi_pangocairo_draw_text_starting_at(state->renderer, combined.data, 10, 10);
 }
 
 
@@ -184,25 +182,22 @@ render_to_buffer(struct anvi_state *state, struct anvi_output *output, struct an
     // Clear the buffer.
     memset(buffer->data, 0, buffer->size);
 
-    cairo_t *cr = cairo_create(buffer->cairo_surface);
-
     const size_t document_width = output->width - 2 * MARGIN_WIDTH;
-    anvi_pangocairo_begin_frame(state, document_width, cr);
+    anvi_pangocairo_begin_frame(state->renderer, buffer->cairo_surface, document_width);
 
     switch (state->phase) {
         case ANVI_START_CONFIGURATION_PHASE:
-            draw_start_configuration_phase(state, cr);
+            draw_start_configuration_phase(state);
             break;
         case ANVI_NORMAL_PHASE:
-            draw_normal_phase(state, output, cr);
+            draw_normal_phase(state, output);
             break;
         case ANVI_FINISHED_PHASE:
-            draw_finish_phase(state, cr);
+            draw_finish_phase(state);
             break;
     }
     
-    cairo_destroy(cr);
-    cairo_surface_flush(buffer->cairo_surface);
+    anvi_pangocairo_end_frame(state->renderer, buffer->cairo_surface);
 
     anvi_log_info("Cairo destroyed and surface flushed");
 }

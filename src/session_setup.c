@@ -12,6 +12,7 @@
 #include <anvi/buffer.h>
 #include <anvi/render.h>
 #include <anvi/text_buffer.h>
+#include <anvi/pangocairo_adapter.h>
 
 static void
 seat_capabilities(void *data, struct wl_seat *seat, uint32_t capabilities) {
@@ -70,6 +71,11 @@ destroy_seat_proxy(struct wl_seat* seat) {
 void
 destroy_anvi_state(struct anvi_state *state) {
     destroy_outputs(state);
+
+    if (state->renderer != NULL) {
+        anvi_pangocairo_free_renderer(state->renderer);
+        state->renderer = NULL;
+    }
 
     if (state->storage != NULL) {
         if (state->storage->document_fd > 0) {
