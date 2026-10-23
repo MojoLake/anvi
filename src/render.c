@@ -18,7 +18,7 @@ static constexpr size_t PADDING_BOTTOM = 20;
 static constexpr size_t WORD_COUNTER_X = 10;
 static constexpr size_t WORD_COUNTER_Y = 10;
 
-static constexpr size_t ENOUGH_WORDS_TEXT_BUTTON_X = WORD_COUNTER_X + 150;
+static constexpr size_t ENOUGH_WORDS_TEXT_BUTTON_X = WORD_COUNTER_X + 220;
 static constexpr size_t ENOUGH_WORDS_TEXT_BUTTON_Y = WORD_COUNTER_Y;
 
 static void
