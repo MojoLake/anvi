@@ -16,7 +16,7 @@
 #include <anvi/config.h>
 
 static int
-try_creating_fd_with_i_end(const size_t i, const char *stem, const char *final_save_directory) {
+try_creating_fd_with_i_end(const size_t i, const char *stem, const char *final_save_directory, char *created_path, size_t created_path_capacity, const char *recovery_directory) {
     char name[256];
 
     int name_length;
@@ -48,22 +48,20 @@ try_creating_fd_with_i_end(const size_t i, const char *stem, const char *final_s
         return -1;
     }
 
-        int recovery_path_length = snprintf(created_path, created_path_capacity, "%s/%s", recovery_directory, name);
+    int recovery_path_length = snprintf(created_path, created_path_capacity, "%s/%s", recovery_directory, name);
 
-        if (recovery_path_length < 0 || (size_t)recovery_path_length >= created_path_capacity) {
-            errno = ENAMETOOLONG;
-            return -1;
-        }
+    if (recovery_path_length < 0 || (size_t)recovery_path_length >= created_path_capacity) {
+        errno = ENAMETOOLONG;
+        return -1;
+    }
 
-        int fd = open(created_path, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0600);
+    int fd = open(created_path, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0600);
 
-        if (fd >= 0) {
-            return fd;
-        }
+    if (fd >= 0) {
+        return fd;
+    }
 
-        if (errno != EEXIST) {
-            return -1;
-        }
+    return -1;
 }
 
 
@@ -84,7 +82,7 @@ create_fd_with_unoccupied_file_name(char *recovery_directory, const char* final_
     }
 
     for (size_t i = 0; i < 10000; ++i) {
-        const int fd = try_creating_fd_with_i_end(i, stem, final_save_directory);
+        const int fd = try_creating_fd_with_i_end(i, stem, final_save_directory, created_path, created_path_capacity, recovery_directory);
         if (fd != -1) {
             return fd;
         }
