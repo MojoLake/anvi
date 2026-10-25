@@ -111,7 +111,6 @@ anvi_pangocairo_end_document_area(struct anvi_renderer *renderer) {
 bool
 anvi_pangocairo_renderer_ready(struct anvi_renderer *renderer) {
     if (renderer == NULL || renderer->layout == NULL) {
-        // maybe no need to check cr?
         return false;
     } 
     return true;
