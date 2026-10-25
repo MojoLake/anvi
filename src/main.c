@@ -99,5 +99,6 @@ int main(void) {
     if (show_save_dialog) {
         return anvi_show_save_dialog(recovery_path, config.save_dir);
     }
+
 	return EXIT_SUCCESS;
 }
