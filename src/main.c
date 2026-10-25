@@ -29,6 +29,7 @@ int main(void) {
     if (anvi_config_set_defaults(&config) == EXIT_FAILURE) {
         return EXIT_FAILURE;
     }
+
     if (anvi_config_load(&config) == EXIT_FAILURE) {
         return EXIT_FAILURE;
     }
@@ -54,20 +55,20 @@ int main(void) {
             break;
         }
 
-        int should_break = 0;
+        int finish_lock_potentially = 0;
         switch (state.phase) {
             case ANVI_START_CONFIGURATION_PHASE:
-                should_break = handle_start_configuration_phase_exit_check(&state);
+                finish_lock_potentially = handle_start_configuration_phase_exit_check(&state);
                 break;
             case ANVI_NORMAL_PHASE:
-                should_break = handle_normal_phase_exit_check(&state);
+                finish_lock_potentially = handle_normal_phase_exit_check(&state);
                 break;
             case ANVI_FINISHED_PHASE:
-                should_break = handle_finish_phase_exit_check(&state);
+                finish_lock_potentially = handle_finish_phase_exit_check(&state);
                 break;
         }
 
-        if (should_break) {
+        if (finish_lock_potentially) {
             bool completed_writing = state.phase == ANVI_FINISHED_PHASE;
 
             wl_display_roundtrip(state.display);
