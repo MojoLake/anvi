@@ -56,11 +56,10 @@ construct_start_configuration_phase_text(struct anvi_state *state) {
         "%s%.*s",
         text_prompt,
         (int)available,
-        state->prompt_input->data // TODO: give only the text as argument to this function
+        state->prompt_input->data
     );
 
     if (state->start_phase_include_invalid_input_text) {
-        // TODO: put the actual max number.
         char invalid_text_warning[] = "\nPlease enter an integer between 1 and 999999.";
         const size_t used = strlen(result.data);
         const size_t remaining = MAX_COMBINED_LEN - used;
@@ -119,7 +118,6 @@ draw_start_configuration_phase(struct anvi_state *state) {
 static double
 calculate_scroll_y(const struct anvi_state *state, double current_scroll_y, const double viewport_height) {
 
-    
     cursor_top_and_bottom res = get_cursor_top_and_bottom(state->renderer, state->document->data, state->document->cursor_bytes);
 
     const double cursor_bottom = res.cursor_bottom;
