@@ -68,7 +68,6 @@ bool
 remove_anvi_output(struct anvi_state *state, uint32_t registry_name) {
     
     struct anvi_output *current_output = state->outputs;
-
     struct anvi_output *previous_output = nullptr;
 
     while (current_output != NULL) {
@@ -152,8 +151,6 @@ lock_surface_configure(
     if (setup_lock_screen(state, output) == EXIT_FAILURE) {
         return;
     }
-
-    // What should we do there here?
 }
 
 const struct ext_session_lock_surface_v1_listener lock_surface_listener = {
