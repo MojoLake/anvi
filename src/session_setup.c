@@ -225,6 +225,9 @@ registry_global(
     if (strcmp(interface, wl_compositor_interface.name) == 0) {
         handle_wl_compositor_interface_registration(state, registry, name, bind_version);
 
+    }
+
+    if (strcmp(interface, wl_output_interface.name) == 0) {
         if (create_and_bind_anvi_output(state, registry, name, bind_version) == EXIT_FAILURE) {
             return;
         }
