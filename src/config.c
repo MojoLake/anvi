@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#include <errno.h>
 
 #include <anvi/app.h>
 #include <anvi/log.h>
@@ -128,12 +129,25 @@ handle_config_line_result(struct anvi_config_line_result *res, struct anvi_confi
 
 int
 anvi_config_load(struct anvi_config *config) {
-    // First read the user configuration.
-    // $XDG_CONFIG_HOME, $HOME, built-in default?
-    FILE *file = fopen("/home/mojolake/code/projects/anvi/anvi.conf", "r");
+
+    char *config_path = g_build_filename(g_get_user_config_dir(), "anvi", "anvi.conf", NULL);
+
+    FILE *file = fopen(config_path, "r");
     if (file == NULL) {
-        return exit_with_failure_and_message("Failed to open configuration file.");
+        const int open_error = errno;
+
+        if (open_error == ENOENT) {
+            // No config file, keep the defaults.
+            g_free(config_path);
+            return EXIT_SUCCESS;
+        }
+
+        anvi_log_error("Failed to open configuration file %s: %s", config_path, strerror(open_error));
+        g_free(config_path);
+        return EXIT_FAILURE;
     }
+
+    g_free(config_path);
 
     char buffer[1024];
     size_t line = 0;
