@@ -156,6 +156,55 @@ static const struct ext_session_lock_v1_listener session_lock_listener = {
     .finished = session_finished
 };
 
+static void
+handle_session_lock_manager_interface_registration(struct anvi_state *state, struct wl_registry *registry, uint32_t name, uint32_t bind_version) {
+    uint32_t client_version = (uint32_t)ext_session_lock_manager_v1_interface.version;
+
+    if (client_version > bind_version) {
+        client_version = bind_version;
+    }
+
+    state->session_lock_manager = wl_registry_bind(
+        registry,
+        name,
+        &ext_session_lock_manager_v1_interface,
+        client_version
+    );
+}
+
+static void
+handle_wl_compositor_interface_registration(struct anvi_state *state, struct wl_registry *registry, uint32_t name, uint32_t bind_version) {
+
+    uint32_t client_version = (uint32_t)wl_compositor_interface.version;
+
+    if (client_version > bind_version) {
+        client_version = bind_version;
+    }
+
+    state->wl_compositor = wl_registry_bind(
+        registry,
+        name,
+        &wl_compositor_interface,
+        client_version
+    );
+}
+
+static void
+handle_wl_seat_registration(struct anvi_state *state, struct wl_registry *registry, uint32_t name, uint32_t bind_version) {
+    uint32_t client_version = wl_seat_interface.version;
+    if (client_version > bind_version) {
+        client_version = bind_version;
+    }
+
+    state->seat = wl_registry_bind(
+        registry,
+        name,
+        &wl_seat_interface,
+        client_version
+    );
+
+    wl_seat_add_listener(state->seat, &seat_listener, state);
+}
 
 static void
 registry_global(
@@ -170,37 +219,12 @@ registry_global(
     uint32_t bind_version = version;
 
     if (strcmp(interface, ext_session_lock_manager_v1_interface.name) == 0) {
-        uint32_t client_version = (uint32_t)ext_session_lock_manager_v1_interface.version;
-
-        if (client_version > bind_version) {
-            client_version = bind_version;
-        }
-
-        state->session_lock_manager = wl_registry_bind(
-            registry,
-            name,
-            &ext_session_lock_manager_v1_interface,
-            client_version
-        );
+        handle_session_lock_manager_interface_registration(state, registry, name, bind_version);
     }
 
     if (strcmp(interface, wl_compositor_interface.name) == 0) {
+        handle_wl_compositor_interface_registration(state, registry, name, bind_version);
 
-        uint32_t client_version = (uint32_t)wl_compositor_interface.version;
-
-        if (client_version > bind_version) {
-            client_version = bind_version;
-        }
-
-        state->wl_compositor = wl_registry_bind(
-            registry,
-            name,
-            &wl_compositor_interface,
-            client_version
-        );
-    }
-
-    if (strcmp(interface, wl_output_interface.name) == 0) {
         if (create_and_bind_anvi_output(state, registry, name, bind_version) == EXIT_FAILURE) {
             return;
         }
@@ -214,19 +238,7 @@ registry_global(
     }
 
     if (strcmp(interface, wl_seat_interface.name) == 0) {
-        uint32_t client_version = wl_seat_interface.version;
-        if (client_version > bind_version) {
-            client_version = bind_version;
-        }
-
-        state->seat = wl_registry_bind(
-            registry,
-            name,
-            &wl_seat_interface,
-            client_version
-        );
-
-        wl_seat_add_listener(state->seat, &seat_listener, state);
+        handle_wl_seat_registration(state, registry, name, bind_version);
     }
 }
 
