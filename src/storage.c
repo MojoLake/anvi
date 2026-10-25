@@ -15,6 +15,57 @@
 #include <anvi/log.h>
 #include <anvi/config.h>
 
+static int
+try_creating_fd_with_i_end(const size_t i, const char *stem, const char *final_save_directory) {
+    char name[256];
+
+    int name_length;
+
+    if (i == 0) {
+        name_length = snprintf(name, sizeof name, "%s.txt", stem);
+    } else {
+        name_length = snprintf(name, sizeof name, "%s-%zu.txt", stem, i);
+    }
+
+    if (name_length < 0 || (size_t)name_length >= sizeof name) {
+        errno = ENAMETOOLONG;
+        return -1;
+    }
+
+    char final_path[ANVI_STORAGE_PATH_CAPACITY];
+    int final_path_length = snprintf(final_path, sizeof final_path, "%s/%s", final_save_directory, name);
+
+    if (final_path_length < 0 || (size_t)final_path_length >= sizeof final_path) {
+        errno = ENAMETOOLONG;
+        return -1;
+    }
+
+    if (access(final_path, F_OK) == 0) {
+        return -1;
+    }
+
+    if (errno != ENOENT) {
+        return -1;
+    }
+
+        int recovery_path_length = snprintf(created_path, created_path_capacity, "%s/%s", recovery_directory, name);
+
+        if (recovery_path_length < 0 || (size_t)recovery_path_length >= created_path_capacity) {
+            errno = ENAMETOOLONG;
+            return -1;
+        }
+
+        int fd = open(created_path, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0600);
+
+        if (fd >= 0) {
+            return fd;
+        }
+
+        if (errno != EEXIST) {
+            return -1;
+        }
+}
+
 
 static int
 create_fd_with_unoccupied_file_name(char *recovery_directory, const char* final_save_directory, char* created_path, size_t created_path_capacity) {
@@ -33,52 +84,9 @@ create_fd_with_unoccupied_file_name(char *recovery_directory, const char* final_
     }
 
     for (size_t i = 0; i < 10000; ++i) {
-        char name[256];
-
-        int name_length;
-
-        if (i == 0) {
-            name_length = snprintf(name, sizeof name, "%s.txt", stem);
-        } else {
-            name_length = snprintf(name, sizeof name, "%s-%zu.txt", stem, i);
-        }
-
-        if (name_length < 0 || (size_t)name_length >= sizeof name) {
-            errno = ENAMETOOLONG;
-            return -1;
-        }
-
-        char final_path[ANVI_STORAGE_PATH_CAPACITY];
-        int final_path_length = snprintf(final_path, sizeof final_path, "%s/%s", final_save_directory, name);
-
-        if (final_path_length < 0 || (size_t)final_path_length >= sizeof final_path) {
-            errno = ENAMETOOLONG;
-            return -1;
-        }
-
-        if (access(final_path, F_OK) == 0) {
-            continue;
-        }
-
-        if (errno != ENOENT) {
-            return -1;
-        }
-
-        int recovery_path_length = snprintf(created_path, created_path_capacity, "%s/%s", recovery_directory, name);
-
-        if (recovery_path_length < 0 || (size_t)recovery_path_length >= created_path_capacity) {
-            errno = ENAMETOOLONG;
-            return -1;
-        }
-
-        int fd = open(created_path, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0600);
-
-        if (fd >= 0) {
+        const int fd = try_creating_fd_with_i_end(i, stem, final_save_directory);
+        if (fd != -1) {
             return fd;
-        }
-
-        if (errno != EEXIST) {
-            return -1;
         }
     }
 
