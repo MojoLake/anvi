@@ -99,3 +99,8 @@ install_data(
   'anvi.desktop',
   install_dir: get_option('datadir') / 'applications',
 )
+
+install_data(
+  'anvi.svg',
+  install_dir: get_option('datadir') / 'icons/hicolor/scalable/apps',
+)

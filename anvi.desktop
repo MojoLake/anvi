@@ -3,6 +3,6 @@ Type=Application
 Name=Anvi
 Comment=Write toward a word count before unlocking
 Exec=anvi
+Icon=anvi
 Terminal=false
 Categories=Utility;
-
