@@ -89,7 +89,8 @@ executable(
     libgrapheme,
     gtk4,
     glib,
-  ]
+  ],
+  install: true,
 )
 
 subdir('tests')
