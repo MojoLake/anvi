@@ -94,3 +94,8 @@ executable(
 )
 
 subdir('tests')
+
+install_data(
+  'anvi.desktop',
+  install_dir: get_option('datadir') / 'applications',
+)
